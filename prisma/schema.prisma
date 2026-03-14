@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Role {
+  id              String      @id @default(cuid())
+  title           String
+  level           String
+  industry        String
+  job_description String
+  created_at      DateTime    @default(now())
+  candidates      Candidate[]
+}
+
+model Candidate {
+  id         String      @id @default(cuid())
+  name       String
+  email      String
+  resume_url String?
+  role_id    String
+  role       Role        @relation(fields: [role_id], references: [id])
+  stage      String
+  created_at DateTime    @default(now())
+  interviews Interview[]
+}
+
+model Interview {
+  id                String             @id @default(cuid())
+  candidate_id      String
+  candidate         Candidate          @relation(fields: [candidate_id], references: [id])
+  interviewer_email String
+  round_type        String
+  scheduled_time    DateTime
+  status            String
+  feedback          InterviewFeedback?
+}
+
+model InterviewFeedback {
+  id             String    @id @default(cuid())
+  interview_id   String    @unique
+  interview      Interview @relation(fields: [interview_id], references: [id])
+  transcript     String?
+  rating         Int?
+  recommendation String?
+  comments       String?
+  created_at     DateTime  @default(now())
+}
