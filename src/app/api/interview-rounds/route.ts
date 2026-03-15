@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
     const candidateId = formData.get("candidateId") as string | null;
     const roleId = formData.get("roleId") as string | null;
     const roundType = formData.get("roundType") as string | null;
+    const interviewDate = formData.get("interviewDate") as string | null;
     const transcriptFile = formData.get("transcriptFile") as File | null;
     const notesFile = formData.get("notesFile") as File | null;
 
@@ -93,31 +94,37 @@ export async function POST(req: NextRequest) {
 
     console.log(`[interview-rounds] Evaluating ${roundType} for ${candidate.name}, previous rounds: ${previousRounds.length}`);
 
-    // 3. Call the AI agent ─────────────────────────────────────────────────
-    const feedback = await evaluateInterviewRound(
-      candidate,
-      role,
-      rubrics,
-      { roundType, transcriptText, interviewerNotes },
-      previousRounds.map((r) => ({
-        roundType: r.round_type,
-        cumulativeScore: r.cumulative_score,
-        aiFeedbackJson: r.ai_feedback_json,
-        createdAt: r.created_at,
-      }))
-    );
-
-    const cumulativeScore: number = feedback.cumulativeScore ?? feedback.roundScore ?? null;
+    // 3. Call the AI agent if files are present ────────────────────────────
+    let feedback: any = null;
+    let cumulativeScore: number | null = null;
+    
+    if (transcriptText || interviewerNotes) {
+      feedback = await evaluateInterviewRound(
+        candidate,
+        role,
+        rubrics,
+        { roundType, transcriptText, interviewerNotes },
+        previousRounds.map((r) => ({
+          roundType: r.round_type,
+          cumulativeScore: r.cumulative_score,
+          aiFeedbackJson: r.ai_feedback_json,
+          createdAt: r.created_at,
+        }))
+      );
+      cumulativeScore = feedback.cumulativeScore ?? feedback.roundScore ?? null;
+    }
 
     // 4. Persist the round ─────────────────────────────────────────────────
     const roundId = `round_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const parsedDate = interviewDate ? new Date(interviewDate) : new Date();
+    
     await prisma.$executeRaw`
       INSERT INTO "InterviewRound"
-        (id, candidate_id, role_id, round_type, transcript_text, interviewer_notes, ai_feedback_json, cumulative_score, created_at)
+        (id, candidate_id, role_id, round_type, transcript_text, interviewer_notes, ai_feedback_json, cumulative_score, created_at, interview_date)
       VALUES
         (${roundId}, ${candidateId}, ${roleId}, ${roundType},
          ${transcriptText || null}, ${interviewerNotes || null},
-         ${JSON.stringify(feedback)}::jsonb, ${cumulativeScore}, NOW())
+         ${feedback ? JSON.stringify(feedback) : null}::jsonb, ${cumulativeScore}, NOW(), ${parsedDate})
     `;
 
     console.log(`[interview-rounds] Round saved: ${roundId}`);

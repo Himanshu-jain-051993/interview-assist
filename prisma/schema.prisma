@@ -109,6 +109,7 @@ model InterviewRound {
   candidate_id      String
   role_id           String
   round_type        String    // Screening | Technical_1 | Technical_2 | Culture_Fit
+  interview_date    DateTime?
   transcript_text   String?
   interviewer_notes String?
   ai_feedback_json  Json?

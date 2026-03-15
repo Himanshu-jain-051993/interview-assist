@@ -84,6 +84,7 @@ const ROUND_COLOR: Record<string, string> = {
 interface InterviewRound {
   id: string;
   round_type: string;
+  interview_date: string | null;
   cumulative_score: number | null;
   ai_feedback_json: any;
   created_at: string;
@@ -133,8 +134,13 @@ function ScoreGauge({ value, label }: { value: number; label: string }) {
 
 // ── Round Card (expandable) ────────────────────────────────────────────────
 
-function RoundCard({ round, index }: { round: InterviewRound; index: number }) {
+function RoundCard({ round, index, candidateId, roleId, onUpdate }: { round: InterviewRound; index: number; candidateId: string; roleId: string; onUpdate: (r: InterviewRound) => void }) {
   const [expanded, setExpanded] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [transcriptFile, setTranscriptFile] = useState<File | null>(null);
+  const [notesFile, setNotesFile] = useState<File | null>(null);
+  const transcriptRef = useRef<HTMLInputElement>(null);
+  const notesRef = useRef<HTMLInputElement>(null);
   const fb = round.ai_feedback_json;
   const score = round.cumulative_score;
   const color = ROUND_COLOR[round.round_type] ?? "bg-slate-100 text-slate-700 border-slate-200";
@@ -158,13 +164,11 @@ function RoundCard({ round, index }: { round: InterviewRound; index: number }) {
             <Badge variant="outline" className={`text-[10px] font-semibold ${color} border`}>
               {ROUND_LABEL[round.round_type] ?? round.round_type}
             </Badge>
-            {fb?.cumulativeDelta && (
-              <span className="text-[10px] text-slate-400">
-                {new Date(round.created_at).toLocaleDateString("en-GB", {
-                  day: "numeric", month: "short", year: "numeric",
-                })}
-              </span>
-            )}
+            <span className="text-[10px] text-slate-400 font-medium">
+              {new Date(round.interview_date || round.created_at).toLocaleDateString("en-GB", {
+                day: "numeric", month: "short", year: "numeric",
+              })}
+            </span>
           </div>
           {fb?.evaluationSummary && (
             <p className="text-xs text-slate-600 mt-1 leading-relaxed truncate">
@@ -192,9 +196,60 @@ function RoundCard({ round, index }: { round: InterviewRound; index: number }) {
       </button>
 
       {/* Expanded detail */}
-      {expanded && fb && (
+      {expanded && (
         <div className="border-t border-slate-100 px-4 py-4 space-y-5 bg-slate-50/30">
-          {/* Scores row */}
+          
+          <div className="bg-white border border-dashed border-slate-300 rounded-xl p-4 shadow-sm space-y-3 mb-4">
+              <p className="text-xs font-semibold text-slate-700">
+                {fb ? "Update / Refresh Feedback" : "Add Feedback / Transcripts"}
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div 
+                  onClick={() => transcriptRef.current?.click()}
+                  className="border border-slate-200 rounded-lg p-3 text-center cursor-pointer hover:bg-slate-50 text-xs"
+                >
+                  {transcriptFile ? <span className="font-semibold text-indigo-600">{transcriptFile.name}</span> : <span className="text-slate-500">Attach Transcript</span>}
+                </div>
+                <div 
+                  onClick={() => notesRef.current?.click()}
+                  className="border border-slate-200 rounded-lg p-3 text-center cursor-pointer hover:bg-slate-50 text-xs"
+                >
+                  {notesFile ? <span className="font-semibold text-indigo-600">{notesFile.name}</span> : <span className="text-slate-500">Attach Notes</span>}
+                </div>
+              </div>
+              <input type="file" ref={transcriptRef} className="hidden" accept=".pdf,.docx,.txt" onChange={e => setTranscriptFile(e.target.files?.[0] || null)} />
+              <input type="file" ref={notesRef} className="hidden" accept=".pdf,.docx,.txt" onChange={e => setNotesFile(e.target.files?.[0] || null)} />
+              <Button 
+                onClick={async () => {
+                  setIsRefreshing(true);
+                  try {
+                    const fd = new FormData();
+                    fd.append("candidateId", candidateId);
+                    fd.append("roleId", roleId);
+                    fd.append("roundType", round.round_type);
+                    if (transcriptFile) fd.append("transcriptFile", transcriptFile);
+                    if (notesFile) fd.append("notesFile", notesFile);
+                    const res = await fetch(`/api/interview-rounds/${round.id}/refresh`, { method: "POST", body: fd });
+                    if (!res.ok) throw new Error("Failed to evaluate");
+                    const data = await res.json();
+                    onUpdate(data.round);
+                    toast.success("Feedback Generated!");
+                  } catch(e: any) {
+                    toast.error(e.message);
+                  } finally {
+                    setIsRefreshing(false);
+                  }
+                }}
+                disabled={isRefreshing || (!transcriptFile && !notesFile)}
+                className="w-full text-xs h-8 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
+              >
+                {isRefreshing ? "Evaluating..." : fb ? "Refresh AI Feedback" : "Generate AI Feedback"}
+              </Button>
+            </div>
+
+          {fb && fb.rubricEvaluations && (
+            <>
+              {/* Scores row */}
           <div className="flex items-center justify-around flex-wrap bg-white rounded-lg p-3 border border-slate-200">
             {fb.roundScore && <ScoreGauge value={fb.roundScore} label="Round Score" />}
             {fb.cumulativeScore && <ScoreGauge value={fb.cumulativeScore} label="Cumulative" />}
@@ -280,15 +335,22 @@ function RoundCard({ round, index }: { round: InterviewRound; index: number }) {
                       <span className="text-xs font-bold text-slate-800">{re.parameter}</span>
                       <div className="flex items-center gap-2">
                         {re.grade && (
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${
-                            re.grade === "Strong" || re.grade === "Good"
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                              : re.grade === "Borderline" 
-                              ? "bg-amber-50 text-amber-700 border border-amber-100"
-                              : "bg-rose-50 text-rose-700 border border-rose-100"
-                          }`}>
-                            {re.grade}
-                          </span>
+                          <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200">
+                            <span className="text-[10px] font-bold text-slate-700 uppercase tracking-widest">{re.grade}</span>
+                            <div className="flex gap-0.5">
+                              {["Poor", "Borderline", "Good", "Strong"].map((level, lvlIdx) => {
+                                const activeIdx = ["Poor", "Borderline", "Good", "Strong"].indexOf(re.grade);
+                                const isActive = lvlIdx <= activeIdx;
+                                const barColor = 
+                                  re.grade === "Poor" ? "bg-rose-500" :
+                                  re.grade === "Borderline" ? "bg-amber-400" :
+                                  "bg-emerald-500";
+                                return (
+                                  <div key={level} className={`h-2.5 w-6 rounded-sm ${isActive ? barColor : "bg-slate-200"}`} />
+                                );
+                              })}
+                            </div>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -314,6 +376,8 @@ function RoundCard({ round, index }: { round: InterviewRound; index: number }) {
               </div>
             </div>
           )}
+            </>
+          )}
         </div>
       )}
     </div>
@@ -334,6 +398,7 @@ function AddRoundForm({
   onCancel: () => void;
 }) {
   const [roundType, setRoundType] = useState("");
+  const [interviewDate, setInterviewDate] = useState("");
   const [transcriptFile, setTranscriptFile] = useState<File | null>(null);
   const [notesFile, setNotesFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -342,7 +407,7 @@ function AddRoundForm({
 
   const handleSubmit = async () => {
     if (!roundType) { toast.error("Please select a round type"); return; }
-    if (!transcriptFile && !notesFile) { toast.error("Please provide transcript or notes"); return; }
+    if (!interviewDate) { toast.error("Please set an interview date"); return; }
 
     setIsSubmitting(true);
     try {
@@ -350,6 +415,7 @@ function AddRoundForm({
       formData.append("candidateId", candidateId);
       formData.append("roleId", roleId);
       formData.append("roundType", roundType);
+      formData.append("interviewDate", new Date(interviewDate).toISOString());
       if (transcriptFile) formData.append("transcriptFile", transcriptFile);
       if (notesFile) formData.append("notesFile", notesFile);
 
@@ -362,7 +428,11 @@ function AddRoundForm({
         throw new Error(err.details || err.error || "Failed");
       }
       const data = await res.json();
-      toast.success("Evaluation complete", { description: `Cumulative score: ${data.round.cumulativeScore?.toFixed(1) ?? "N/A"}/10` });
+      if (!transcriptFile && !notesFile) {
+        toast.success("Planned round added");
+      } else {
+        toast.success("Evaluation complete", { description: `Cumulative score: ${data.round.cumulativeScore?.toFixed(1) ?? "N/A"}/10` });
+      }
       onSuccess(data.round);
     } catch (err: any) {
       toast.error("Evaluation failed", { description: err.message });
@@ -378,19 +448,32 @@ function AddRoundForm({
         <Button variant="ghost" size="sm" onClick={onCancel} className="text-xs text-slate-500 h-7 px-3 hover:bg-slate-100">Cancel</Button>
       </div>
 
-      {/* Round type */}
-      <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-slate-700">Round Type</label>
-        <Select value={roundType} onValueChange={(val) => setRoundType(val ?? "")}>
-          <SelectTrigger className="h-9 text-sm border-slate-200">
-            <SelectValue placeholder="Select round…" />
-          </SelectTrigger>
-          <SelectContent>
-            {ROUND_TYPES.map((r) => (
-              <SelectItem key={r.value} value={r.value} className="text-sm">{r.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select> // Dropdown for round type added
+      <div className="flex gap-4">
+        {/* Round type */}
+        <div className="space-y-1.5 flex-1">
+          <label className="text-xs font-semibold text-slate-700">Round Type</label>
+          <Select value={roundType} onValueChange={(val) => setRoundType(val ?? "")}>
+            <SelectTrigger className="h-9 text-sm border-slate-200">
+              <SelectValue placeholder="Select round…" />
+            </SelectTrigger>
+            <SelectContent>
+              {ROUND_TYPES.map((r) => (
+                <SelectItem key={r.value} value={r.value} className="text-sm">{r.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {/* Interview Date */}
+        <div className="space-y-1.5 flex-1">
+          <label className="text-xs font-semibold text-slate-700">Interview Date</label>
+          <input 
+            type="date" 
+            value={interviewDate} 
+            onChange={e => setInterviewDate(e.target.value)} 
+            className="w-full h-9 px-3 py-1 text-sm border border-slate-200 bg-transparent rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          />
+        </div>
       </div>
 
       {/* Interviewer notes */}
@@ -423,11 +506,13 @@ function AddRoundForm({
 
       <Button
         onClick={handleSubmit}
-        disabled={isSubmitting || !roundType}
+        disabled={isSubmitting || !roundType || !interviewDate}
         className="w-full h-10 text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white mt-2"
       >
         {isSubmitting ? (
-          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Running Evaluation…</>
+          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving…</>
+        ) : (!transcriptFile && !notesFile) ? (
+          <><Clock className="w-4 h-4 mr-2" /> Schedule Empty Round</>
         ) : (
           <><FileText className="w-4 h-4 mr-2" /> Generate Cumulative Feedback</>
         )}
@@ -622,7 +707,13 @@ export function CandidateActionsDialog({
                     <div className="relative z-10 space-y-6">
                       {rounds.map((round, i) => (
                         <div key={round.id} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                          <RoundCard round={round} index={i} />
+                          <RoundCard 
+                            round={round} 
+                            index={i} 
+                            candidateId={candidate.id}
+                            roleId={candidate.roleId}
+                            onUpdate={(updated) => setRounds(prev => prev.map(r => r.id === updated.id ? updated : r))}
+                          />
                         </div>
                       ))}
                     </div>
