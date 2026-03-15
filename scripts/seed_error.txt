@@ -1,0 +1,5 @@
+Error executing SQL:
+expected 768 dimensions, not 3072
+Detail: N/A
+Where: N/A
+Hint: N/A

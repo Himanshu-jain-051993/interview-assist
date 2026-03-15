@@ -1,0 +1,78 @@
+{
+  "roles": [
+    {
+      "id": "role-1",
+      "title": "Senior Product Manager",
+      "status": "Open",
+      "appliedCount": 45,
+      "rejectedCount": 12,
+      "reviewCount": 18,
+      "interviewCount": 15
+    },
+    {
+      "id": "role-2",
+      "title": "Software Engineer",
+      "status": "Open",
+      "appliedCount": 120,
+      "rejectedCount": 45,
+      "reviewCount": 30,
+      "interviewCount": 45
+    }
+  ],
+  "candidates": [
+    {
+      "id": "cand-1",
+      "roleId": "role-1",
+      "name": "Alex Rivera",
+      "status": "Shortlisted",
+      "resume_score": 92,
+      "resume_summary": "Strong product leadership background with experience in scaling SaaS products. Expert in user lifecycle management.",
+      "profile_data": {
+        "experience": [
+          {
+            "company": "TechStream",
+            "role": "Product Lead",
+            "duration": "2021 - Present",
+            "achievements": [
+              "Led mobile app overhaul resulting in 40% increase in MAU",
+              "Implemented new A/B testing framework"
+            ]
+          }
+        ],
+        "education": [
+          {
+            "school": "Stanford University",
+            "degree": "B.S. Computer Science"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cand-2",
+      "roleId": "role-1",
+      "name": "Jordan Smith",
+      "status": "Applied",
+      "resume_score": 78,
+      "resume_summary": "Experienced project manager transitioning to product. Strong operational focus.",
+      "profile_data": {
+        "experience": [
+          {
+            "company": "OpsWorks",
+            "role": "Project Manager",
+            "duration": "2019 - 2021",
+            "achievements": [
+              "Managed $2M infrastructure project",
+              "Reduced operational churn by 15%"
+            ]
+          }
+        ],
+        "education": [
+          {
+            "school": "UC Berkeley",
+            "degree": "B.A. Economics"
+          }
+        ]
+      }
+    }
+  ]
+}

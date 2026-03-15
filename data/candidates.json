@@ -1,0 +1,863 @@
+[
+  {
+    "name": "Arjun Mehta",
+    "standardized_role": "Senior Product Manager: subscription",
+    "title": "Senior Product Manager | AI Platforms | Enterprise SaaS | Data Products",
+    "contact": {
+      "email": "arjun.mehta@gmail.com",
+      "phone": "+91-9876543210",
+      "linkedin": "linkedin.com/in/arjunmehta"
+    },
+    "summary": "Senior Product Manager with 10+ years of experience building AI-powered SaaS and analytics platforms for enterprise customers. Led product launches across APAC generating $18M ARR and implemented ML-driven optimization tools improving operational efficiency by 35%.",
+    "skills": {
+      "product_management": [
+        "Product Strategy",
+        "Roadmap Planning",
+        "Product Lifecycle Management",
+        "Customer Discovery",
+        "Go-to-market Strategy",
+        "Growth Experimentation",
+        "Stakeholder Management"
+      ],
+      "technical_skills": [
+        "Agile & Scrum",
+        "SQL",
+        "Machine Learning Integration",
+        "Generative AI & RAG",
+        "API Architecture",
+        "Product Analytics",
+        "AWS"
+      ]
+    },
+    "experience": [
+      {
+        "role": "Senior Product Manager",
+        "company": "Infosys",
+        "duration": "Mar 2021 - Present",
+        "achievements": [
+          "Led development of an AI-driven enterprise analytics platform adopted by 120+ enterprise clients, generating $18M annual recurring revenue.",
+          "Defined product roadmap for predictive forecasting features that improved client demand prediction accuracy by 28%.",
+          "Conducted customer discovery with 40+ enterprise clients to identify workflow inefficiencies, informing product redesign that improved user engagement by 32%.",
+          "Launched automated data ingestion pipelines reducing manual reporting effort by 45% for enterprise clients.",
+          "Introduced product analytics dashboards enabling leadership teams to track KPIs, increasing decision-making speed by 20%.",
+          "Reduced feature release cycle time by 30% through improved sprint planning and cross-functional collaboration."
+        ]
+      },
+      {
+        "role": "Product Manager",
+        "company": "Tech Mahindra",
+        "duration": "Jul 2018 - Feb 2021",
+        "achievements": [
+          "Designed a cloud-based IoT monitoring platform used by manufacturing clients to monitor 10,000+ machines globally.",
+          "Implemented ML-based anomaly detection reducing equipment downtime by 17%.",
+          "Partnered with engineering teams to launch a remote diagnostics feature increasing platform adoption by 25%.",
+          "Led GTM strategy across APAC region generating $6M incremental revenue.",
+          "Introduced self-service analytics tools reducing support tickets by 22%.",
+          "Conducted A/B testing on dashboard features improving user engagement by 19%."
+        ]
+      },
+      {
+        "role": "Software Engineer",
+        "company": "Wipro",
+        "duration": "Aug 2015 - Jun 2018",
+        "achievements": [
+          "Developed microservices architecture supporting 2M daily logistics transactions.",
+          "Improved API performance by 25% through optimized database queries.",
+          "Built automated monitoring tools reducing production incidents by 30%.",
+          "Collaborated with product managers to prioritize backlog features improving release efficiency by 18%.",
+          "Led refactoring of legacy modules reducing technical debt by 20%.",
+          "Improved system uptime from 96% to 99.3% through infrastructure enhancements."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "MBA – Product Management",
+        "school": "Indian Institute of Management Bangalore"
+      },
+      {
+        "degree": "B.Tech Computer Science",
+        "school": "Delhi Technological University"
+      }
+    ]
+  },
+  {
+    "name": "Neha Kapoor",
+    "standardized_role": "Senior Product Manager: subscription",
+    "title": "Senior Product Manager | Fintech Platforms | AI Risk Systems",
+    "contact": {
+      "email": "neha.kapoor@gmail.com",
+      "phone": "+91-9988776655",
+      "linkedin": "linkedin.com/in/nehakapoor"
+    },
+    "summary": "Senior Product Manager specializing in fintech and digital lending platforms with 9+ years of experience launching AI-driven financial products. Delivered credit risk and payments products used by millions of users.",
+    "skills": {
+      "product_management": [
+        "Fintech Product Strategy",
+        "Product Analytics",
+        "Customer Journey Mapping",
+        "Growth Experiments",
+        "Stakeholder Alignment"
+      ],
+      "technical_skills": [
+        "Machine Learning Risk Models",
+        "SQL",
+        "Python",
+        "API Integrations",
+        "Data Visualization"
+      ]
+    },
+    "experience": [
+      {
+        "role": "Senior Product Manager",
+        "company": "Paytm",
+        "duration": "Jan 2022 - Present",
+        "achievements": [
+          "Led development of AI-driven credit risk engine improving loan approval accuracy by 30%.",
+          "Reduced loan processing time from 72 hours to under 4 hours through automated underwriting workflows.",
+          "Launched merchant analytics dashboards used by 100K+ merchants improving retention by 14%.",
+          "Implemented fraud detection models reducing payment fraud incidents by 21%.",
+          "Led cross-functional team of 15 engineers and analysts delivering 12 product releases annually.",
+          "Expanded lending platform to Tier-2 markets increasing loan disbursement volume by 35%."
+        ]
+      },
+      {
+        "role": "Product Manager",
+        "company": "Razorpay",
+        "duration": "May 2019 - Dec 2021",
+        "achievements": [
+          "Built payment gateway analytics module increasing merchant retention by 18%.",
+          "Optimized checkout flow through A/B testing improving payment success rate by 9%.",
+          "Developed merchant onboarding automation reducing onboarding time by 40%.",
+          "Launched subscription billing platform generating $5M ARR within first year.",
+          "Improved transaction monitoring system reducing false fraud alerts by 25%.",
+          "Partnered with 20+ fintech partners expanding platform integrations."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "MBA",
+        "school": "Indian School of Business"
+      },
+      {
+        "degree": "B.Tech Information Technology",
+        "school": "VIT University"
+      }
+    ]
+  },
+  {
+    "name": "Rahul Sharma",
+    "standardized_role": "Senior Product Manager: subscription",
+    "title": "Senior Product Manager | Cloud Platforms | B2B SaaS",
+    "contact": {
+      "email": "rahul.sharma@gmail.com",
+      "phone": "+91-9871122334",
+      "linkedin": "linkedin.com/in/rahulsharma"
+    },
+    "summary": "Product leader with expertise in enterprise SaaS platforms and cloud infrastructure products. Delivered digital transformation products used by 200+ enterprise clients.",
+    "skills": {
+      "product_management": [
+        "Enterprise SaaS",
+        "Product Strategy",
+        "Roadmap Planning",
+        "Customer Discovery",
+        "Market Expansion"
+      ],
+      "technical_skills": [
+        "Cloud Platforms",
+        "API Architecture",
+        "Data Analytics",
+        "ML Product Integration"
+      ]
+    },
+    "experience": [
+      {
+        "role": "Senior Product Manager",
+        "company": "Zoho",
+        "duration": "2021 - Present",
+        "achievements": [
+          "Led launch of enterprise workflow automation platform used by 150+ enterprise clients.",
+          "Increased platform adoption by 34% through improved onboarding workflows.",
+          "Introduced AI-based workflow recommendations improving productivity by 27%.",
+          "Reduced workflow configuration time by 40% via visual builder tools.",
+          "Expanded platform integrations with 25+ enterprise systems including CRM and ERP solutions.",
+          "Generated $9M ARR through enterprise SaaS licensing expansion."
+        ]
+      },
+      {
+        "role": "Product Manager",
+        "company": "Freshworks",
+        "duration": "2018 - 2021",
+        "achievements": [
+          "Launched customer support automation product reducing support ticket resolution time by 22%.",
+          "Implemented chatbot automation reducing manual support interactions by 35%.",
+          "Developed analytics dashboards enabling CX teams to track performance metrics.",
+          "Improved platform uptime from 98.5% to 99.8%.",
+          "Led product discovery interviews with 50+ customers informing roadmap decisions.",
+          "Drove product expansion across North American markets increasing ARR by $7M."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "MBA",
+        "school": "IIM Ahmedabad"
+      }
+    ]
+  },
+  {
+    "name": "Siddharth Bansal",
+    "standardized_role": "Senior Product Manager: subscription",
+    "title": "Senior Product Manager | Data Platforms | AI Analytics",
+    "contact": {
+      "email": "sid.bansal@gmail.com",
+      "phone": "+91-9811223344",
+      "linkedin": "linkedin.com/in/siddharthbansal"
+    },
+    "summary": "Senior Product Manager specializing in large-scale data platforms and AI analytics products delivering actionable insights for enterprise clients.",
+    "skills": {
+      "product_management": [
+        "Data Products",
+        "Growth Strategy",
+        "Product Strategy",
+        "Customer Insights"
+      ],
+      "technical_skills": [
+        "SQL",
+        "Python",
+        "ML Models",
+        "Analytics Platforms"
+      ]
+    },
+    "experience": [
+      {
+        "role": "Senior Product Manager",
+        "company": "Flipkart",
+        "duration": "2021 - Present",
+        "achievements": [
+          "Launched enterprise analytics platform processing 10B+ data events monthly.",
+          "Reduced reporting latency by 45% through real-time streaming pipelines.",
+          "Introduced self-serve analytics tools used by 500+ internal business users.",
+          "Improved product recommendation algorithms increasing conversion rate by 11%.",
+          "Reduced data pipeline failures by 30% through monitoring automation.",
+          "Generated $12M incremental revenue via improved personalization features."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "MBA",
+        "school": "IIM Calcutta"
+      }
+    ]
+  },
+  {
+    "name": "Karan Gupta",
+    "standardized_role": "Senior Product Manager: subscription",
+    "title": "Senior Product Manager | Marketplace Platforms | Growth",
+    "contact": {
+      "email": "karan.gupta@gmail.com",
+      "phone": "+91-9765432101",
+      "linkedin": "linkedin.com/in/karang"
+    },
+    "summary": "Senior Product Manager with deep experience in marketplace growth and experimentation, scaling platforms serving millions of users.",
+    "skills": {
+      "product_management": [
+        "Marketplace Strategy",
+        "Growth Experiments",
+        "Roadmap Planning",
+        "Customer Insights"
+      ],
+      "technical_skills": [
+        "A/B Testing",
+        "SQL",
+        "Data Analysis",
+        "ML Personalization"
+      ]
+    },
+    "experience": [
+      {
+        "role": "Senior Product Manager",
+        "company": "Swiggy",
+        "duration": "2022 - Present",
+        "achievements": [
+          "Led marketplace supply optimization initiative increasing restaurant onboarding by 40%.",
+          "Developed AI-powered recommendation engine improving order conversion by 12%.",
+          "Reduced delivery time by 18% through route optimization features.",
+          "Launched merchant analytics dashboard improving restaurant retention by 15%.",
+          "Ran 30+ growth experiments improving monthly active users by 20%.",
+          "Expanded marketplace operations across 50 new cities."
+        ]
+      },
+      {
+        "role": "Product Manager",
+        "company": "Ola",
+        "duration": "2019 - 2022",
+        "achievements": [
+          "Led driver engagement product improving driver retention by 25%.",
+          "Launched ride pricing optimization algorithms improving marketplace balance.",
+          "Reduced ride cancellation rates by 17%.",
+          "Improved driver onboarding process reducing onboarding time by 35%.",
+          "Introduced gamification features increasing driver activity by 22%.",
+          "Collaborated with data science teams to implement surge pricing prediction models."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "MBA",
+        "school": "XLRI Jamshedpur"
+      }
+    ]
+  },
+  {
+    "name": "Rohan Malhotra",
+    "standardized_role": "Staff Software Engineer",
+    "title": "Senior Software Engineer | Distributed Systems | Cloud Platforms",
+    "contact": {
+      "email": "rohan.malhotra@gmail.com",
+      "phone": "+91-9876541111",
+      "linkedin": "linkedin.com/in/rohanmalhotra"
+    },
+    "summary": "Senior Software Engineer with 8+ years of experience building scalable distributed systems and cloud-native applications. Delivered high-throughput backend systems handling over 50M daily requests and improved platform reliability across enterprise SaaS products.",
+    "skills": {
+      "languages": ["Java", "Python", "Go", "SQL"],
+      "technologies": ["Microservices", "Kubernetes", "AWS", "Kafka", "Redis", "Docker"]
+    },
+    "experience": [
+      {
+        "role": "Senior Software Engineer",
+        "company": "Amazon",
+        "duration": "2021 - Present",
+        "achievements": [
+          "Design microservices architecture supporting 50M+ API requests per day for e-commerce order processing.",
+          "Reduced checkout latency by 28% by optimizing database queries and caching strategies.",
+          "Built distributed event-processing system using Kafka improving order processing throughput by 35%.",
+          "Improved system availability from 99.2% to 99.95% through fault-tolerant architecture redesign.",
+          "Implemented auto-scaling infrastructure reducing compute costs by 22%.",
+          "Mentored 6 junior engineers and introduced code quality standards improving deployment reliability."
+        ]
+      },
+      {
+        "role": "Software Engineer",
+        "company": "Accenture",
+        "duration": "2018 - 2021",
+        "achievements": [
+          "Developed REST APIs powering logistics systems used by 20+ enterprise clients.",
+          "Reduced processing time of batch jobs by 40% through parallel data processing techniques.",
+          "Automated CI/CD pipelines reducing deployment cycles from weekly to daily releases.",
+          "Improved API response time by 33% through optimized indexing and query tuning.",
+          "Collaborated with product teams to implement new customer-facing features increasing adoption by 18%.",
+          "Introduced monitoring tools reducing incident resolution time by 25%."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "B.Tech Computer Science",
+        "school": "NIT Trichy"
+      }
+    ]
+  },
+  {
+    "name": "Ankit Verma",
+    "standardized_role": "Staff Software Engineer",
+    "title": "Software Engineer | Backend Systems | API Architecture",
+    "contact": {
+      "email": "ankit.verma@gmail.com",
+      "phone": "+91-9898989898",
+      "linkedin": "linkedin.com/in/ankitverma"
+    },
+    "summary": "Backend Software Engineer with expertise in scalable APIs and cloud services. Delivered enterprise software used by millions of users across fintech and SaaS platforms.",
+    "skills": {
+      "languages": ["Java", "Node.js", "Python"],
+      "technologies": ["AWS", "Docker", "PostgreSQL", "Redis", "REST APIs"]
+    },
+    "experience": [
+      {
+        "role": "Software Engineer",
+        "company": "Paytm",
+        "duration": "2021 - Present",
+        "achievements": [
+          "Built payment transaction APIs processing 20M+ daily transactions.",
+          "Reduced payment processing latency by 25% through improved service orchestration.",
+          "Implemented fraud detection service reducing fraudulent transactions by 19%.",
+          "Designed distributed caching system improving API response time by 30%.",
+          "Developed monitoring dashboards reducing incident resolution time by 35%.",
+          "Improved transaction success rate from 94% to 97% through retry mechanisms."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "B.Tech Computer Engineering",
+        "school": "BITS Pilani"
+      }
+    ]
+  },
+  {
+    "name": "Kunal Shah",
+    "standardized_role": "Staff Software Engineer",
+    "title": "Software Engineer | Cloud Infrastructure | DevOps",
+    "contact": {
+      "email": "kunal.shah@gmail.com",
+      "phone": "+91-9812345678",
+      "linkedin": "linkedin.com/in/kunalshah"
+    },
+    "summary": "Cloud infrastructure engineer specializing in building scalable DevOps pipelines and distributed cloud platforms.",
+    "skills": {
+      "languages": ["Python", "Go"],
+      "technologies": ["Kubernetes", "Terraform", "AWS", "CI/CD"]
+    },
+    "experience": [
+      {
+        "role": "Software Engineer",
+        "company": "Flipkart",
+        "duration": "2020 - Present",
+        "achievements": [
+          "Built Kubernetes deployment pipelines supporting 500+ microservices.",
+          "Reduced infrastructure provisioning time by 60% using Terraform automation.",
+          "Improved system uptime from 99.1% to 99.9% via automated failover systems.",
+          "Optimized container orchestration reducing cloud costs by 20%.",
+          "Created monitoring dashboards tracking 1B+ daily events.",
+          "Automated infrastructure scaling improving deployment reliability."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "B.Tech Information Technology",
+        "school": "IIIT Hyderabad"
+      }
+    ]
+  },
+  {
+    "name": "Priya Nair",
+    "standardized_role": "Staff Software Engineer",
+    "title": "Software Engineer | Full Stack | Web Platforms",
+    "contact": {
+      "email": "priya.nair@gmail.com",
+      "phone": "+91-9911223344",
+      "linkedin": "linkedin.com/in/priyanair"
+    },
+    "summary": "Full stack engineer experienced in building high-performance web applications and scalable backend services.",
+    "skills": {
+      "languages": ["JavaScript", "TypeScript", "Python"],
+      "technologies": ["React", "Node.js", "MongoDB", "AWS"]
+    },
+    "experience": [
+      {
+        "role": "Software Engineer",
+        "company": "Swiggy",
+        "duration": "2021 - Present",
+        "achievements": [
+          "Developed restaurant onboarding platform improving onboarding efficiency by 35%.",
+          "Built React dashboard used by 50K+ restaurant partners.",
+          "Reduced frontend load time by 40% through optimized code splitting.",
+          "Implemented backend APIs supporting 3M daily restaurant updates.",
+          "Improved application uptime to 99.8% through automated monitoring.",
+          "Enhanced search algorithm improving restaurant discovery conversion by 15%."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "B.Tech Computer Science",
+        "school": "VIT University"
+      }
+    ]
+  },
+  {
+    "name": "Aditya Kulkarni",
+    "standardized_role": "Staff Software Engineer",
+    "title": "Senior Software Engineer | Data Platforms | Distributed Systems",
+    "contact": {
+      "email": "aditya.kulkarni@gmail.com",
+      "phone": "+91-9765432109",
+      "linkedin": "linkedin.com/in/adityakulkarni"
+    },
+    "summary": "Engineer specializing in large-scale data platforms processing billions of events daily.",
+    "skills": {
+      "languages": ["Scala", "Python"],
+      "technologies": ["Spark", "Kafka", "Hadoop", "AWS"]
+    },
+    "experience": [
+      {
+        "role": "Senior Software Engineer",
+        "company": "Uber",
+        "duration": "2020 - Present",
+        "achievements": [
+          "Designed real-time analytics pipelines processing 5B+ ride events daily.",
+          "Reduced data processing latency by 45% through optimized Spark jobs.",
+          "Improved data reliability across analytics systems by implementing validation pipelines.",
+          "Built ML feature pipelines improving model accuracy by 12%.",
+          "Reduced infrastructure costs by 18% via optimized cluster usage.",
+          "Developed internal analytics tools used by 300+ data scientists."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "B.Tech Computer Science",
+        "school": "IIT Bombay"
+      }
+    ]
+  },
+  {
+    "name": "Sneha Gupta",
+    "standardized_role": "Senior Data Analyst: Logistics & Supply Chain",
+    "title": "Senior Data Analyst | Business Intelligence | Data Visualization",
+    "contact": {
+      "email": "sneha.gupta@gmail.com",
+      "phone": "+91-9876543333",
+      "linkedin": "linkedin.com/in/snehagupta"
+    },
+    "summary": "Data Analyst with 7+ years experience transforming complex datasets into actionable insights driving business decisions.",
+    "skills": {
+      "tools": ["SQL", "Python", "Tableau", "Power BI", "Excel"],
+      "techniques": ["A/B Testing", "Statistical Analysis", "Data Modeling"]
+    },
+    "experience": [
+      {
+        "role": "Senior Data Analyst",
+        "company": "Amazon",
+        "duration": "2021 - Present",
+        "achievements": [
+          "Built Tableau dashboards tracking sales performance across 50 product categories.",
+          "Identified pricing optimization opportunities increasing revenue by 12%.",
+          "Automated reporting pipelines reducing manual analysis time by 60%.",
+          "Analyzed 200M+ transaction records improving demand forecasting accuracy by 20%.",
+          "Partnered with product teams to run A/B experiments improving conversion rates by 8%.",
+          "Developed churn prediction models reducing customer attrition by 15%."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "MSc Data Analytics",
+        "school": "Delhi University"
+      }
+    ]
+  },
+  {
+    "name": "Amit Bansal",
+    "standardized_role": "Senior Data Analyst: Logistics & Supply Chain",
+    "title": "Data Analyst | Business Intelligence",
+    "contact": {
+      "email": "amit.bansal@gmail.com",
+      "phone": "+91-9911224455",
+      "linkedin": "linkedin.com/in/amitbansal"
+    },
+    "summary": "Analyst specializing in data-driven decision making and growth analytics.",
+    "skills": {
+      "tools": ["SQL", "Python", "Looker", "Excel"]
+    },
+    "experience": [
+      {
+        "role": "Data Analyst",
+        "company": "Flipkart",
+        "duration": "2020 - Present",
+        "achievements": [
+          "Analyzed user behavior data across 20M users improving recommendation engine CTR by 10%.",
+          "Developed marketing attribution models increasing campaign ROI by 18%.",
+          "Automated KPI dashboards reducing reporting effort by 50%.",
+          "Identified operational inefficiencies reducing logistics costs by 14%.",
+          "Ran customer segmentation models improving targeted marketing conversions by 16%.",
+          "Created weekly executive dashboards used by leadership teams."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "B.Tech Statistics",
+        "school": "Delhi University"
+      }
+    ]
+  },
+  {
+    "name": "Nikita Rao",
+    "standardized_role": "Senior Data Analyst: Logistics & Supply Chain",
+    "title": "Senior Data Analyst | Growth Analytics",
+    "contact": {
+      "email": "nikita.rao@gmail.com",
+      "phone": "+91-9871234567",
+      "linkedin": "linkedin.com/in/nikitarao"
+    },
+    "summary": "Growth analytics specialist focused on experimentation and user behavior insights.",
+    "skills": {
+      "tools": ["SQL", "Python", "R", "Tableau"]
+    },
+    "experience": [
+      {
+        "role": "Senior Data Analyst",
+        "company": "Swiggy",
+        "duration": "2021 - Present",
+        "achievements": [
+          "Analyzed 50M+ user sessions to identify conversion drop-offs improving checkout conversion by 11%.",
+          "Designed A/B testing frameworks enabling 30+ experiments per quarter.",
+          "Built dashboards tracking marketplace supply-demand balance across 200 cities.",
+          "Identified growth opportunities increasing monthly active users by 14%.",
+          "Improved restaurant ranking algorithm improving order completion rate by 9%.",
+          "Collaborated with product teams to drive feature adoption improvements."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "MBA Business Analytics",
+        "school": "IIM Kozhikode"
+      }
+    ]
+  },
+  {
+    "name": "Rahul Iyer",
+    "standardized_role": "Senior Data Analyst: Logistics & Supply Chain",
+    "title": "Data Analyst | Product Analytics",
+    "contact": {
+      "email": "rahul.iyer@gmail.com",
+      "phone": "+91-9988770000",
+      "linkedin": "linkedin.com/in/rahuliyer"
+    },
+    "summary": "Product analytics expert focused on measuring feature adoption and product growth.",
+    "skills": {
+      "tools": ["SQL", "Python", "Looker", "Power BI"]
+    },
+    "experience": [
+      {
+        "role": "Data Analyst",
+        "company": "Razorpay",
+        "duration": "2020 - Present",
+        "achievements": [
+          "Analyzed 100M+ payment transactions improving fraud detection models.",
+          "Developed revenue analytics dashboards used by product teams.",
+          "Improved payment success rate by 7% through funnel analysis.",
+          "Built automated reporting pipelines reducing manual work by 40%.",
+          "Identified high-value customer segments improving marketing ROI by 20%.",
+          "Supported launch analytics for new fintech products."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "BSc Statistics",
+        "school": "Mumbai University"
+      }
+    ]
+  },
+  {
+    "name": "Meera Jain",
+    "standardized_role": "Senior Data Analyst: Logistics & Supply Chain",
+    "title": "Data Analyst | BI Specialist",
+    "contact": {
+      "email": "meera.jain@gmail.com",
+      "phone": "+91-9765430000",
+      "linkedin": "linkedin.com/in/meerajain"
+    },
+    "summary": "Business intelligence analyst focused on enterprise analytics and KPI tracking.",
+    "skills": {
+      "tools": ["SQL", "Tableau", "Excel"]
+    },
+    "experience": [
+      {
+        "role": "Data Analyst",
+        "company": "Deloitte",
+        "duration": "2019 - Present",
+        "achievements": [
+          "Built executive dashboards tracking 100+ business KPIs.",
+          "Automated reporting workflows reducing reporting time by 55%.",
+          "Analyzed customer churn patterns reducing attrition by 12%.",
+          "Created financial forecasting models improving planning accuracy by 18%.",
+          "Developed self-service BI tools used by 200+ employees.",
+          "Improved operational reporting accuracy across departments."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "MBA Analytics",
+        "school": "NMIMS"
+      }
+    ]
+  },
+  {
+    "name": "Aarav Sinha",
+    "standardized_role": "Staff AI Product Manager: Personalization",
+    "title": "AI Product Manager | ML Platforms | Generative AI",
+    "contact": {
+      "email": "aarav.sinha@gmail.com",
+      "phone": "+91-9876542222",
+      "linkedin": "linkedin.com/in/aaravsinha"
+    },
+    "summary": "AI Product Manager with 9+ years experience building ML platforms and generative AI applications.",
+    "skills": {
+      "product": ["AI Product Strategy", "ML Lifecycle", "Experimentation"],
+      "technical": ["Python", "ML APIs", "LLMs", "RAG"]
+    },
+    "experience": [
+      {
+        "role": "AI Product Manager",
+        "company": "Microsoft",
+        "duration": "2022 - Present",
+        "achievements": [
+          "Led development of enterprise generative AI assistant used by 30K employees.",
+          "Improved knowledge search accuracy by 40% using RAG architecture.",
+          "Reduced customer support resolution time by 35% using AI automation.",
+          "Launched ML platform enabling 100+ data scientists to deploy models faster.",
+          "Increased product adoption by 28% through improved onboarding.",
+          "Generated $12M new enterprise revenue through AI product expansion."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "MBA Product Management",
+        "school": "ISB"
+      }
+    ]
+  },
+  {
+    "name": "Ritika Desai",
+    "standardized_role": "Staff AI Product Manager: Personalization",
+    "title": "Senior AI Product Manager | Data Products | ML Systems",
+    "contact": {
+      "email": "ritika.desai@gmail.com",
+      "phone": "+91-9912345678",
+      "linkedin": "linkedin.com/in/ritikadesai"
+    },
+    "summary": "AI product leader specializing in data platforms and ML-powered products.",
+    "skills": {
+      "product": ["AI Product Strategy", "ML Ops"],
+      "technical": ["Python", "TensorFlow", "SQL"]
+    },
+    "experience": [
+      {
+        "role": "AI Product Manager",
+        "company": "Google",
+        "duration": "2021 - Present",
+        "achievements": [
+          "Launched ML-based recommendation engine improving engagement by 18%.",
+          "Led AI personalization product serving 50M monthly users.",
+          "Reduced ML deployment time by 45% via automated ML pipelines.",
+          "Improved model accuracy by 12% through improved training datasets.",
+          "Led cross-functional AI roadmap planning across 5 teams.",
+          "Generated $20M incremental revenue via personalization improvements."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "MBA",
+        "school": "IIM Bangalore"
+      }
+    ]
+  },
+  {
+    "name": "Dev Khanna",
+    "standardized_role": "Staff AI Product Manager: Personalization",
+    "title": "AI Product Manager | NLP Platforms",
+    "contact": {
+      "email": "dev.khanna@gmail.com",
+      "phone": "+91-9812344321",
+      "linkedin": "linkedin.com/in/devkhanna"
+    },
+    "summary": "Product manager specializing in NLP products and conversational AI platforms.",
+    "skills": {
+      "product": ["AI Strategy", "NLP Products"],
+      "technical": ["Python", "LLMs", "RAG", "APIs"]
+    },
+    "experience": [
+      {
+        "role": "AI Product Manager",
+        "company": "OpenAI Startup Partner",
+        "duration": "2022 - Present",
+        "achievements": [
+          "Built conversational AI product handling 10M+ monthly user queries.",
+          "Improved chatbot response accuracy by 35% via fine-tuned LLM models.",
+          "Reduced support costs by 40% through automation.",
+          "Launched enterprise AI chatbot across 25 companies.",
+          "Improved latency of inference pipelines by 30%.",
+          "Led cross-functional ML product team of 12 engineers."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "MBA",
+        "school": "XLRI"
+      }
+    ]
+  },
+  {
+    "name": "Ishaan Patel",
+    "standardized_role": "Staff AI Product Manager: Personalization",
+    "title": "AI Product Manager | ML Platforms",
+    "contact": {
+      "email": "ishaan.patel@gmail.com",
+      "phone": "+91-9765123456",
+      "linkedin": "linkedin.com/in/ishaanp"
+    },
+    "summary": "AI product manager building ML platforms for enterprise data teams.",
+    "skills": {
+      "product": ["ML Lifecycle", "AI Platforms"],
+      "technical": ["Python", "ML Ops", "AWS"]
+    },
+    "experience": [
+      {
+        "role": "AI Product Manager",
+        "company": "IBM",
+        "duration": "2020 - Present",
+        "achievements": [
+          "Built enterprise ML platform enabling deployment of 200+ models.",
+          "Reduced ML model deployment time by 50%.",
+          "Improved model monitoring systems reducing production failures by 25%.",
+          "Launched AI governance tools used by enterprise clients.",
+          "Improved ML experimentation speed by 30%.",
+          "Generated $8M enterprise licensing revenue."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "MBA",
+        "school": "SP Jain Institute of Management"
+      }
+    ]
+  },
+  {
+    "name": "Tanvi Arora",
+    "standardized_role": "Staff AI Product Manager: Personalization",
+    "title": "AI Product Manager | Generative AI Platforms",
+    "contact": {
+      "email": "tanvi.arora@gmail.com",
+      "phone": "+91-9988123456",
+      "linkedin": "linkedin.com/in/tanviarora"
+    },
+    "summary": "Product manager focused on generative AI and enterprise AI automation tools.",
+    "skills": {
+      "product": ["AI Product Strategy", "GenAI Applications"],
+      "technical": ["LLMs", "Prompt Engineering", "Python"]
+    },
+    "experience": [
+      {
+        "role": "AI Product Manager",
+        "company": "Salesforce",
+        "duration": "2022 - Present",
+        "achievements": [
+          "Launched generative AI sales assistant increasing sales productivity by 22%.",
+          "Improved lead scoring accuracy by 18% using ML models.",
+          "Reduced CRM data entry time by 35% through AI automation.",
+          "Built RAG-based knowledge assistant improving query accuracy by 28%.",
+          "Led product rollout across 3 enterprise regions.",
+          "Generated $10M ARR through AI feature adoption."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "MBA",
+        "school": "ISB"
+      }
+    ]
+  }
+]

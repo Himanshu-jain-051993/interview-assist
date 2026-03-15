@@ -1,0 +1,59 @@
+{
+  "Product Manager": [
+    {
+      "parameter": "Analytical Thinking",
+      "poor": "Struggles with A/B tests; relies on anecdotes or gut feel.",
+      "borderline": "Understands 'what' happened but misses the 'why' (seasonality/noise).",
+      "good": "Consistently uses data for decisions; identifies bottlenecks in funnels.",
+      "strong": "Predicts long-term Lifetime Value impact; connects disparate data for non-obvious insights."
+    },
+    {
+      "parameter": "Problem Space Understanding",
+      "poor": "Jumps to features; treats symptoms rather than root causes.",
+      "good": "Clearly defines the 'Job to be Done' and competitive landscape.",
+      "strong": "Dissects deep psychological friction; reframes problems for simpler solutions."
+    }
+  ],
+  "Software Engineer": [
+    {
+      "parameter": "System Design",
+      "poor": "Proposes fragile monoliths; ignores single points of failure.",
+      "good": "Designs decoupled, resilient systems with appropriate caching.",
+      "strong": "Architects for 10x current load; implements sophisticated circuit-breakers."
+    },
+    {
+      "parameter": "Concurrency",
+      "poor": "Unaware of race conditions or deadlocks.",
+      "good": "Effectively uses Kafka/Redis for asynchronous patterns.",
+      "strong": "Expertly manages distributed locks and low-level memory implications."
+    }
+  ],
+  "Data Analytics": [
+    {
+      "parameter": "SQL & Rigor",
+      "poor": "Inefficient JOINs; query errors; struggles with large datasets.",
+      "good": "Writes complex window functions and Common Table Expressions.",
+      "strong": "Builds automated, scalable data pipelines and self-serve tools."
+    },
+    {
+      "parameter": "Statistical Significance",
+      "poor": "Ignores bias/noise; draws conclusions from insufficient data.",
+      "good": "Correctly interprets significance and confidence intervals.",
+      "strong": "Identifies Simpson’s Paradox in delivery data; designs sophisticated experiments."
+    }
+  ],
+  "AI Product Manager": [
+    {
+      "parameter": "Model Intuition",
+      "poor": "Treats AI as a 'magic box'; doesn't understand limitations.",
+      "good": "Can debate Precision vs. Recall trade-offs for a specific User Experience.",
+      "strong": "Deeply understands embedding spaces and fine-tuning vs. RAG trade-offs."
+    },
+    {
+      "parameter": "Strategy",
+      "poor": "Forces AI where simple if/else logic works.",
+      "good": "Defines a clear ROI for AI features; builds data moats.",
+      "strong": "Maps out a multi-year AI roadmap that creates competitive advantages."
+    }
+  ]
+}
