@@ -1,59 +1,48 @@
 {
-  "Product Manager": [
+  "Product Management": [
     {
-      "parameter": "Analytical Thinking",
-      "poor": "Struggles with A/B tests; relies on anecdotes or gut feel.",
-      "borderline": "Understands 'what' happened but misses the 'why' (seasonality/noise).",
-      "good": "Consistently uses data for decisions; identifies bottlenecks in funnels.",
-      "strong": "Predicts long-term Lifetime Value impact; connects disparate data for non-obvious insights."
+      "parameter": "Analytical Rigor & Decision Science",
+      "poor": "Relies on anecdotal evidence; unable to define success metrics for a feature; confuses correlation with causation; cannot explain the basics of A/B testing.",
+      "borderline": "Mentions high-level metrics (e.g., total traffic) but fails to account for second-order effects like churn or cannibalization; understands 'what' happened but requires prompting to explain the 'why'.",
+      "good": "Defines SMART goals (Specific, Measurable, Achievable, Relevant, Time-bound); identifies journey bottlenecks using cohort analysis; correctly interprets statistical significance and p-values.",
+      "strong": "Connects product interventions directly to Profit and Loss outcomes (e.g., Lifetime Value/Customer Acquisition Cost); identifies Simpson's Paradox in complex datasets; predicts long-term ecosystem health beyond immediate conversion wins."
     },
     {
-      "parameter": "Problem Space Understanding",
-      "poor": "Jumps to features; treats symptoms rather than root causes.",
-      "good": "Clearly defines the 'Job to be Done' and competitive landscape.",
-      "strong": "Dissects deep psychological friction; reframes problems for simpler solutions."
+      "parameter": "Problem Decomposition & Strategy",
+      "poor": "Jumps to building features before defining the problem; treats symptoms (e.g., 'we need a button') rather than root causes; lacks a coherent 'Why'.",
+      "borderline": "Identifies a valid user pain point but the proposed strategy is a 'me-too' copy of competitors; fails to prioritize based on business impact vs. engineering effort.",
+      "good": "Clearly articulates the 'Job to be Done'; uses frameworks like RICE (Reach, Impact, Confidence, Effort) to prioritize the roadmap; aligns product strategy with company-wide goals.",
+      "strong": "Dissects deep psychological friction in the user journey; identifies high-leverage 'Zero-to-One' opportunities; reframes complex problems into simple, high-impact product solutions."
+    },
+    {
+      "parameter": "Execution & Stakeholder Orchestration",
+      "poor": "Product Requirement Documents are missing critical edge cases; fails to manage dependencies, leading to significant engineering rework; communication is reactive.",
+      "borderline": "Writes functional requirements but misses non-functional ones (e.g., latency, analytics events); struggles to manage conflicting feedback from senior leadership.",
+      "good": "Consistently ships high-quality features on schedule; proactively manages the 'Critical Path'; translates complex business needs into clear technical requirements for engineers.",
+      "strong": "Masters the 'Minimum Viable Product' mindset to prove value with minimum waste; builds unanimous cross-functional buy-in for controversial pivots; eliminates blockers before they impact the team."
     }
   ],
-  "Software Engineer": [
+  "Software Engineering": [
     {
-      "parameter": "System Design",
-      "poor": "Proposes fragile monoliths; ignores single points of failure.",
-      "good": "Designs decoupled, resilient systems with appropriate caching.",
-      "strong": "Architects for 10x current load; implements sophisticated circuit-breakers."
+      "parameter": "System Architecture & Scalability",
+      "poor": "Proposes fragile, monolithic designs; hard-codes configuration; ignores single points of failure; fails to consider the 'N+1' query problem.",
+      "borderline": "Designs functional systems for standard loads but fails to account for state management, data consistency, or database 'hot-spots' during peak traffic.",
+      "good": "Architects decoupled, event-driven microservices; correctly applies caching layers; understands the trade-offs between SQL and NoSQL for specific workloads.",
+      "strong": "Designs for IPL-scale surges (e.g., 100k+ Requests Per Second); implements multi-region failover, circuit-breakers, and graceful degradation; masters the CAP theorem trade-offs."
     },
     {
-      "parameter": "Concurrency",
-      "poor": "Unaware of race conditions or deadlocks.",
-      "good": "Effectively uses Kafka/Redis for asynchronous patterns.",
-      "strong": "Expertly manages distributed locks and low-level memory implications."
-    }
-  ],
-  "Data Analytics": [
-    {
-      "parameter": "SQL & Rigor",
-      "poor": "Inefficient JOINs; query errors; struggles with large datasets.",
-      "good": "Writes complex window functions and Common Table Expressions.",
-      "strong": "Builds automated, scalable data pipelines and self-serve tools."
+      "parameter": "Concurrency & Distributed Systems",
+      "poor": "Unaware of race conditions, deadlocks, or thread-safety; writes code that works locally but crashes under high concurrent load in production.",
+      "borderline": "Understands the theory of distributed systems but struggles to implement distributed locking, queuing, or idempotent operations correctly.",
+      "good": "Expertly uses Redis or Kafka for asynchronous patterns; handles eventual consistency gracefully; implements robust retry-mechanisms with exponential backoff.",
+      "strong": "Expertly manages complex distributed state using tools like Redlock or Zookeeper; optimizes for P99 latency at the microsecond level; understands low-level kernel and memory implications."
     },
     {
-      "parameter": "Statistical Significance",
-      "poor": "Ignores bias/noise; draws conclusions from insufficient data.",
-      "good": "Correctly interprets significance and confidence intervals.",
-      "strong": "Identifies Simpson’s Paradox in delivery data; designs sophisticated experiments."
-    }
-  ],
-  "AI Product Manager": [
-    {
-      "parameter": "Model Intuition",
-      "poor": "Treats AI as a 'magic box'; doesn't understand limitations.",
-      "good": "Can debate Precision vs. Recall trade-offs for a specific User Experience.",
-      "strong": "Deeply understands embedding spaces and fine-tuning vs. RAG trade-offs."
-    },
-    {
-      "parameter": "Strategy",
-      "poor": "Forces AI where simple if/else logic works.",
-      "good": "Defines a clear ROI for AI features; builds data moats.",
-      "strong": "Maps out a multi-year AI roadmap that creates competitive advantages."
+      "parameter": "Observability & Operational Excellence",
+      "poor": "Zero unit tests; relies on manual testing; fails to implement logging or monitoring; treats production crashes as 'surprises'.",
+      "borderline": "Writes basic unit tests but misses edge cases; uses logging but lacks centralized tracing; struggles to identify root causes during on-call incidents.",
+      "good": "Maintains high test coverage (Unit, Integration, E2E); builds custom Prometheus/Grafana dashboards; uses OpenTelemetry for end-to-end service tracing.",
+      "strong": "Builds 'self-healing' infrastructure; uses canary deployments and automated rollbacks; masters post-mortem analysis to prevent recurring failure modes."
     }
   ]
 }

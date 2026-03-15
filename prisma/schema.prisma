@@ -31,7 +31,8 @@ model Rubric {
   borderline String?
   good       String
   strong     String
-  created_at DateTime @default(now())
+  content_embedding Unsupported("vector(3072)")?
+  created_at        DateTime @default(now())
 
   @@unique([category, parameter])
 }
