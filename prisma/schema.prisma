@@ -21,7 +21,9 @@ model Role {
   content_embedding Unsupported("vector(3072)")?
   created_at        DateTime    @default(now())
   candidates      Candidate[]
+  interview_guides InterviewGuide[]
 }
+
 
 model Rubric {
   id         String   @id @default(cuid())
@@ -48,8 +50,9 @@ model Candidate {
   profile_data Json?
   content_embedding Unsupported("vector(3072)")?
   created_at        DateTime    @default(now())
-  interviews   Interview[]
-  transcripts  InterviewTranscript[]
+  interviews        Interview[]
+  transcripts       InterviewTranscript[]
+  interview_guides  InterviewGuide[]
 }
 
 model Interview {
@@ -81,5 +84,18 @@ model InterviewTranscript {
   raw_text         String
   synthesized_json Json?
   processed_at     DateTime  @default(now())
+}
+
+model InterviewGuide {
+  id           String    @id @default(cuid())
+  candidate_id String
+  role_id      String
+  guide_data   Json
+  generated_at DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+  candidate    Candidate @relation(fields: [candidate_id], references: [id], onDelete: Cascade)
+  role         Role      @relation(fields: [role_id], references: [id], onDelete: Cascade)
+
+  @@unique([candidate_id, role_id])
 }
 

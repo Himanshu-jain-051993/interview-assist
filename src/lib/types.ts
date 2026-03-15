@@ -10,7 +10,7 @@ export interface Role {
   interviewCount: number;
 }
 
-export type CandidateStatus = 'Applied' | 'Screening' | 'Shortlisted' | 'Rejected';
+export type CandidateStatus = 'Applied' | 'Screening' | 'Shortlisted' | 'Interview Scheduled' | 'Rejected';
 
 export interface Experience {
   company: string;

@@ -26,12 +26,19 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
   const [guideCandidate, setGuideCandidate] = useState<Candidate | null>(null);
   const [guideData, setGuideData] = useState<any>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  // Track status changes made inside the sheet so the table badge updates instantly
+  const [localStatuses, setLocalStatuses] = useState<Record<string, string>>({});
+
+  const handleStatusChange = (id: string, newStatus: string) => {
+    setLocalStatuses((prev) => ({ ...prev, [id]: newStatus }));
+  };
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'applied': return 'bg-slate-100 text-slate-700';
       case 'screening': return 'bg-blue-100 text-blue-700';
       case 'shortlisted': return 'bg-emerald-100 text-emerald-700';
+      case 'interview scheduled': return 'bg-violet-100 text-violet-700';
       case 'rejected': return 'bg-rose-100 text-rose-700';
       default: return 'bg-slate-100 text-slate-700';
     }
@@ -43,9 +50,9 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
     return 'text-rose-600';
   };
 
-  const handleGenerateGuide = async (candidate: Candidate) => {
+  const handleGenerateGuide = async (candidate: Candidate, force = false) => {
     setGuideCandidate(candidate);
-    setGuideData(null);
+    if (!force) setGuideData(null); // keep old data visible while refreshing
     setIsGenerating(true);
 
     try {
@@ -54,7 +61,8 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           candidateId: candidate.id,
-          roleId: candidate.roleId
+          roleId: candidate.roleId,
+          force,
         }),
       });
 
@@ -64,7 +72,7 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
     } catch (error) {
       console.error("Error generating guide:", error);
       alert("Failed to generate interview guide. Please try again.");
-      setGuideCandidate(null);
+      if (!force) setGuideCandidate(null);
     } finally {
       setIsGenerating(false);
     }
@@ -82,7 +90,9 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {candidates.map((candidate) => (
+          {candidates.map((candidate) => {
+            const displayStatus = localStatuses[candidate.id] ?? candidate.status;
+            return (
             <TableRow key={candidate.id} className="hover:bg-slate-50/50 transition-colors group">
               <TableCell className="font-medium">
                 <div className="flex items-center gap-3">
@@ -93,8 +103,8 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
                 </div>
               </TableCell>
               <TableCell>
-                <Badge variant="outline" className={`${getStatusColor(candidate.status)} border-transparent`}>
-                  {candidate.status}
+                <Badge variant="outline" className={`${getStatusColor(displayStatus)} border-transparent`}>
+                  {displayStatus}
                 </Badge>
               </TableCell>
               <TableCell>
@@ -140,20 +150,24 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
                 </div>
               </TableCell>
             </TableRow>
-          ))}
+          );
+          })}
         </TableBody>
       </Table>
 
       <AIEvaluationSheet 
         candidate={selectedCandidate} 
         isOpen={!!selectedCandidate} 
-        onClose={() => setSelectedCandidate(null)} 
+        onClose={() => setSelectedCandidate(null)}
+        onStatusChange={handleStatusChange}
       />
 
       <InterviewGuideSheet
         candidate={guideCandidate}
         guideData={guideData}
         isOpen={!!guideCandidate}
+        isRefreshing={isGenerating && !!guideData}
+        onRefresh={() => guideCandidate && handleGenerateGuide(guideCandidate, true)}
         onClose={() => {
             if (!isGenerating) {
                 setGuideCandidate(null);

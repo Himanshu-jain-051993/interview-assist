@@ -1,12 +1,47 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
-const model = genAI.getGenerativeModel({ 
-  model: "gemini-1.5-flash",
-  generationConfig: { responseMimeType: "application/json" }
-});
+// Initialize genAI lazily to ensure environment variables are loaded
+let genAI: GoogleGenerativeAI | null = null;
+let model: any = null;
+
+// Use gemini-2.5-flash (gemini-1.5-flash was deprecated, 2.0-flash free tier exhausted)
+const GEMINI_MODEL = "gemini-2.5-flash";
+
+function getModel() {
+    if (!genAI) {
+        const apiKey = process.env.GOOGLE_AI_API_KEY;
+        if (!apiKey) {
+            throw new Error("GOOGLE_AI_API_KEY is not defined in environment variables");
+        }
+        genAI = new GoogleGenerativeAI(apiKey);
+        model = genAI.getGenerativeModel({ 
+            model: GEMINI_MODEL,
+            generationConfig: { responseMimeType: "application/json" }
+        });
+    }
+    return model;
+}
+
+async function sleep(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 export async function generateInterviewGuide(candidate: any, role: any, rubrics: any[]) {
+    const model = getModel();
+
+    // Summarize profile data if it's potentially too large (though Gemini 1.5 Flash handles 1M tokens)
+    const profileJson = JSON.stringify(candidate.profile_data);
+    const profileSummary = profileJson.length > 5000 
+        ? profileJson.substring(0, 5000) + "... [Profile Truncated for token optimization]" 
+        : profileJson;
+
+    console.log("DEBUG: Agent Payload:", {
+        candidateId: candidate.id,
+        roleId: role.id,
+        rubricsCount: rubrics.length,
+        profileDataPreview: profileSummary.substring(0, 50)
+    });
+
     const systemPrompt = `
 ROLE: You are the Lead Interview Architect for Zomato. Your task is to generate a high-stakes, evidence-based interview guide.
 
@@ -44,14 +79,20 @@ CONTEXT:
 - Role: ${role.title} (Category: ${role.category})
 - JD: ${role.job_description}
 - Candidate: ${candidate.name}
-- Profile: ${JSON.stringify(candidate.profile_data)}
+- Profile: ${profileSummary}
 - Available Rubrics: ${rubrics.map(r => r.parameter).join(", ")}
+
+OUTPUT FORMAT REQUIREMENTS:
+- You MUST generate EXACTLY 3 questions for EACH category: Screening, Technical R1, Technical R2, and Culture.
+- Total of 12 questions minimum across all 4 categories.
+- Each question must reference the candidate's specific experience from their profile.
+- Return ONLY valid JSON. No markdown, no code fences.
 
 OUTPUT FORMAT (JSON):
 {
   "guide": [
     {
-      "category": "Screening" | "Technical R1" | "Technical R2" | "Culture",
+      "category": "Screening",
       "questions": [
         {
           "question": "The question text",
@@ -60,14 +101,64 @@ OUTPUT FORMAT (JSON):
             "strong": "Strong signal signs",
             "poor": "Poor signal signs"
           }
-        }
+        },
+        { "question": "...", "rubricParameter": "...", "lookFor": { "strong": "...", "poor": "..." } },
+        { "question": "...", "rubricParameter": "...", "lookFor": { "strong": "...", "poor": "..." } }
       ]
+    },
+    {
+      "category": "Technical R1",
+      "questions": [ {}, {}, {} ]
+    },
+    {
+      "category": "Technical R2",
+      "questions": [ {}, {}, {} ]
+    },
+    {
+      "category": "Culture",
+      "questions": [ {}, {}, {} ]
     }
   ]
 }
 `;
 
-    const result = await model.generateContent(systemPrompt);
-    const response = await result.response;
-    return JSON.parse(response.text());
+    console.log("DEBUG: Sending prompt to Gemini for candidate:", candidate.name);
+    
+    const MAX_RETRIES = 3;
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            console.log(`DEBUG: Attempt ${attempt}/${MAX_RETRIES} using model ${GEMINI_MODEL}`);
+            const result = await model.generateContent(systemPrompt);
+            const response = await result.response;
+            const text = response.text();
+            console.log("DEBUG: Model response received, length:", text.length, " preview:", text.substring(0, 100));
+            
+            try {
+                return JSON.parse(text);
+            } catch (parseError) {
+                console.error("DEBUG: Failed to parse model response as JSON:", text.substring(0, 500));
+                throw new Error("Model generated invalid JSON");
+            }
+        } catch (modelError: any) {
+            const errorMessage: string = modelError?.message || "Unknown model error";
+            console.error(`DEBUG: Attempt ${attempt} failed:`, errorMessage);
+
+            // Check for 429 rate limit — extract retry delay
+            const is429 = errorMessage.includes("429") || errorMessage.includes("Too Many Requests") || errorMessage.includes("RESOURCE_EXHAUSTED");
+            if (is429 && attempt < MAX_RETRIES) {
+                const retryMatch = errorMessage.match(/retry in (\d+(?:\.\d+)?)s/i);
+                const waitSeconds = retryMatch ? Math.ceil(parseFloat(retryMatch[1])) : 30;
+                console.log(`DEBUG: Rate limited. Waiting ${waitSeconds}s before retry...`);
+                await sleep(waitSeconds * 1000);
+                continue;
+            }
+
+            // Provide specific error details
+            if (is429) {
+                throw new Error(`Rate limit exceeded for model ${GEMINI_MODEL}. Please wait a minute and try again. (${errorMessage.substring(0, 200)})`);
+            }
+            throw new Error(`AI Generation failed: ${errorMessage}`);
+        }
+    }
+    throw new Error("Max retries exceeded. Please try again later.");
 }
