@@ -49,6 +49,7 @@ model Candidate {
   content_embedding Unsupported("vector(3072)")?
   created_at        DateTime    @default(now())
   interviews   Interview[]
+  transcripts  InterviewTranscript[]
 }
 
 model Interview {
@@ -72,3 +73,13 @@ model InterviewFeedback {
   comments       String?
   created_at     DateTime  @default(now())
 }
+
+model InterviewTranscript {
+  id               String    @id @default(cuid())
+  candidate_id     String
+  candidate        Candidate @relation(fields: [candidate_id], references: [id], onDelete: Cascade)
+  raw_text         String
+  synthesized_json Json?
+  processed_at     DateTime  @default(now())
+}
+
