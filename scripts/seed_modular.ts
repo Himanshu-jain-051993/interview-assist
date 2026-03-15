@@ -1,14 +1,9 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../src/lib/prisma";
+import "dotenv/config";
+
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import * as fs from "fs";
 import * as path from "path";
-
-// Force DATABASE_URL to use DIRECT_URL for seeding
-if (process.env.DIRECT_URL) {
-  process.env.DATABASE_URL = process.env.DIRECT_URL;
-}
-
-const prisma = new PrismaClient();
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 // NOTE: gemini-embedding-001 outputs 3072-dimension vectors.
@@ -28,7 +23,9 @@ async function seedRoles() {
 
   for (const roleData of roles) {
     console.log(`Processing role: ${roleData.title}`);
+    console.log("  Generating JD embedding...");
     const embedding = await getEmbedding(roleData.full_text);
+    console.log("  JD embedding generated.");
 
     const existingRole = await prisma.role.findFirst({
       where: { title: roleData.title },
@@ -67,6 +64,7 @@ async function seedRoles() {
       embeddingStr,
       roleId
     );
+    console.log(`  Role ${roleData.title} seeded successfully.`);
   }
 }
 
@@ -177,9 +175,11 @@ async function main() {
     await seedCandidates();
     console.log("Modular seeding completed successfully!");
   } catch (error) {
-    console.error("Seeding failed:", error);
+    console.error("Seeding failed:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
     process.exit(1);
   } finally {
+    // No need to disconnect if using the global instance usually, 
+    // but for a script it's fine.
     await prisma.$disconnect();
   }
 }

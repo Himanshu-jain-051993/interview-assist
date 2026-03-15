@@ -12,9 +12,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Candidate } from "@/lib/types";
-import { FileText, Sparkles, User, ChevronRight } from "lucide-react";
+import { FileText, Sparkles, User, ChevronRight, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { AIEvaluationSheet } from "./AIEvaluationSheet";
+import { InterviewGuideSheet } from "./InterviewGuideSheet";
 
 interface CandidateTableProps {
   candidates: Candidate[];
@@ -22,6 +23,9 @@ interface CandidateTableProps {
 
 export function CandidateTable({ candidates }: CandidateTableProps) {
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+  const [guideCandidate, setGuideCandidate] = useState<Candidate | null>(null);
+  const [guideData, setGuideData] = useState<any>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -39,8 +43,31 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
     return 'text-rose-600';
   };
 
-  const handleGenerateGuide = (name: string) => {
-    alert(`Interview guide generated for ${name}`);
+  const handleGenerateGuide = async (candidate: Candidate) => {
+    setGuideCandidate(candidate);
+    setGuideData(null);
+    setIsGenerating(true);
+
+    try {
+      const response = await fetch("/api/generate-guide", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          candidateId: candidate.id,
+          roleId: candidate.roleId
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to generate guide");
+      const data = await response.json();
+      setGuideData(data);
+    } catch (error) {
+      console.error("Error generating guide:", error);
+      alert("Failed to generate interview guide. Please try again.");
+      setGuideCandidate(null);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -97,9 +124,14 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
                     variant="outline" 
                     size="sm"
                     className="border-slate-200 text-slate-600 hover:bg-slate-50"
-                    onClick={() => handleGenerateGuide(candidate.name)}
+                    onClick={() => handleGenerateGuide(candidate)}
+                    disabled={isGenerating && guideCandidate?.id === candidate.id}
                   >
-                    <FileText className="w-4 h-4 mr-2" />
+                    {isGenerating && guideCandidate?.id === candidate.id ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                        <FileText className="w-4 h-4 mr-2" />
+                    )}
                     Interview Guide
                   </Button>
                   <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity">
@@ -117,6 +149,19 @@ export function CandidateTable({ candidates }: CandidateTableProps) {
         isOpen={!!selectedCandidate} 
         onClose={() => setSelectedCandidate(null)} 
       />
+
+      <InterviewGuideSheet
+        candidate={guideCandidate}
+        guideData={guideData}
+        isOpen={!!guideCandidate}
+        onClose={() => {
+            if (!isGenerating) {
+                setGuideCandidate(null);
+                setGuideData(null);
+            }
+        }}
+      />
     </div>
   );
 }
+

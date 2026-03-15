@@ -21,7 +21,7 @@ async function main() {
 
   const roles = await client.query(`SELECT id, title, category, (content_embedding IS NOT NULL) as has_embedding FROM "Role" ORDER BY created_at DESC`);
   console.log(`\n📊 Role rows in DB: ${roles.rows.length}`);
-  roles.rows.forEach(r => console.log(`  - ${r.title} | has_embedding=${r.has_embedding}`));
+  roles.rows.forEach(r => console.log(`  - [${r.id}] ${r.title} | has_embedding=${r.has_embedding}`));
 
   const candidates = await client.query(`SELECT COUNT(*) as count FROM "Candidate"`);
   console.log(`\n📊 Candidate rows in DB: ${candidates.rows[0].count}`);
