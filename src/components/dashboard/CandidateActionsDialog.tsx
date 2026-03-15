@@ -31,8 +31,12 @@ import {
   User,
   Quote,
   AlertCircle,
+  PenLine,
+  FileAudio2,
 } from "lucide-react";
 import { toast } from "sonner";
+
+// ── Constants ────────────────────────────────────────────────────────────────
 
 const STAGE_OPTIONS: CandidateStatus[] = [
   "Applied",
@@ -42,7 +46,6 @@ const STAGE_OPTIONS: CandidateStatus[] = [
   "Rejected",
 ];
 
-// Stages at/after "Interview Scheduled" unlock transcript + guide
 const ADVANCED_STAGES: CandidateStatus[] = ["Interview Scheduled", "Rejected"];
 
 const STATUS_COLORS: Record<CandidateStatus, string> = {
@@ -52,6 +55,16 @@ const STATUS_COLORS: Record<CandidateStatus, string> = {
   "Interview Scheduled": "bg-violet-100 text-violet-700 border-violet-200",
   Rejected:              "bg-rose-100 text-rose-700 border-rose-200",
 };
+
+const STAGE_DOT: Record<CandidateStatus, string> = {
+  Applied:               "bg-slate-400",
+  Screening:             "bg-blue-400",
+  Shortlisted:           "bg-emerald-400",
+  "Interview Scheduled": "bg-violet-400",
+  Rejected:              "bg-rose-400",
+};
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 interface DialogueTurn {
   speakerRole: "Interviewer" | "Candidate";
@@ -69,6 +82,12 @@ interface SynthesisResult {
   overallSignals: { strengths: string[]; concerns: string[] };
 }
 
+interface UploadState {
+  isUploading: boolean;
+  progress: number;
+  savedFileName: string | null;
+}
+
 interface CandidateActionsDialogProps {
   candidate: Candidate | null;
   currentStatus: CandidateStatus;
@@ -76,6 +95,123 @@ interface CandidateActionsDialogProps {
   onClose: () => void;
   onStatusChange: (id: string, newStatus: CandidateStatus) => void;
   onOpenGuide: (candidate: Candidate) => void;
+}
+
+// ── Upload card sub-component ─────────────────────────────────────────────────
+
+interface UploadCardProps {
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+  accentClass: string;     // e.g. "violet"
+  state: UploadState;
+  onFileSelect: (file: File) => void;
+  accept?: string;
+}
+
+function UploadCard({
+  label,
+  description,
+  icon,
+  accentClass,
+  state,
+  onFileSelect,
+  accept = ".pdf,.docx",
+}: UploadCardProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) onFileSelect(file);
+  };
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3 flex flex-col">
+      {/* Title row */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className={`text-${accentClass}-500`}>{icon}</span>
+          <div>
+            <p className="text-xs font-bold text-slate-800">{label}</p>
+            <p className="text-[11px] text-slate-400 leading-tight">{description}</p>
+          </div>
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          className={`text-xs h-8 shrink-0 border-${accentClass}-200 text-${accentClass}-700 hover:bg-${accentClass}-50`}
+          disabled={state.isUploading}
+          onClick={() => inputRef.current?.click()}
+        >
+          {state.isUploading ? (
+            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+          ) : (
+            <Upload className="w-3.5 h-3.5 mr-1.5" />
+          )}
+          {state.isUploading ? "Uploading…" : "Upload"}
+        </Button>
+      </div>
+
+      {/* Progress */}
+      {state.isUploading && (
+        <div className="space-y-1">
+          <Progress value={state.progress} className="h-1" />
+          <p className="text-[10px] text-slate-400">Processing…</p>
+        </div>
+      )}
+
+      {/* Saved indicator */}
+      {!state.isUploading && state.savedFileName && (
+        <div className="flex items-center gap-1.5 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-2.5 py-1.5">
+          <CheckCircle2 className="w-3 h-3 shrink-0" />
+          <span className="truncate font-medium">{state.savedFileName}</span>
+          <span className="shrink-0 text-emerald-500 ml-auto">Saved</span>
+        </div>
+      )}
+
+      {/* Drop zone */}
+      <div
+        onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+        onDragLeave={() => setIsDragOver(false)}
+        onDrop={handleDrop}
+        onClick={() => !state.isUploading && inputRef.current?.click()}
+        className={`flex items-center justify-center gap-2 border border-dashed rounded-lg py-2.5 px-3 cursor-pointer transition-colors text-[11px]
+          ${isDragOver
+            ? `border-${accentClass}-400 bg-${accentClass}-50 text-${accentClass}-600`
+            : `border-slate-200 text-slate-400 hover:border-${accentClass}-300 hover:bg-${accentClass}-50/20`}
+          ${state.isUploading ? "pointer-events-none opacity-50" : ""}`}
+      >
+        <Upload className="w-3.5 h-3.5 shrink-0" />
+        <span>Drop .pdf or .docx here</span>
+      </div>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) onFileSelect(f);
+          e.target.value = "";
+        }}
+      />
+    </div>
+  );
+}
+
+// ── Main Dialog ───────────────────────────────────────────────────────────────
+
+async function extractText(file: File): Promise<string> {
+  const allowed = [".pdf", ".docx"];
+  const ext = "." + file.name.split(".").pop()?.toLowerCase();
+  if (!allowed.includes(ext)) {
+    throw new Error(`Unsupported file type "${ext}". Use .pdf or .docx.`);
+  }
+  return ""; // actual extraction happens server-side
 }
 
 export function CandidateActionsDialog({
@@ -86,20 +222,24 @@ export function CandidateActionsDialog({
   onStatusChange,
   onOpenGuide,
 }: CandidateActionsDialogProps) {
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isDragOver, setIsDragOver] = useState(false);
-  const [synthesis, setSynthesis] = useState<SynthesisResult | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   const isAdvanced = ADVANCED_STAGES.includes(currentStatus);
 
-  // ── Status update ──────────────────────────────────────────────────────
+  // Transcript state
+  const [transcriptState, setTranscriptState] = useState<UploadState>({
+    isUploading: false, progress: 0, savedFileName: null,
+  });
+  const [synthesis, setSynthesis] = useState<SynthesisResult | null>(null);
+
+  // Interviewer notes state
+  const [notesState, setNotesState] = useState<UploadState>({
+    isUploading: false, progress: 0, savedFileName: null,
+  });
+
+  // ── Status update ──────────────────────────────────────────────────────────
   const handleStatusChange = async (newStatus: CandidateStatus) => {
     if (!candidate) return;
     const prev = currentStatus;
-    onStatusChange(candidate.id, newStatus); // optimistic update in parent
-
+    onStatusChange(candidate.id, newStatus);
     try {
       const res = await fetch(`/api/candidates/${candidate.id}`, {
         method: "PATCH",
@@ -107,71 +247,103 @@ export function CandidateActionsDialog({
         body: JSON.stringify({ status: newStatus }),
       });
       if (!res.ok) throw new Error("Update failed");
-      toast.success("Stage updated", {
-        description: `${candidate.name} moved to ${newStatus}`,
-      });
+      toast.success("Stage updated", { description: `${candidate.name} moved to ${newStatus}` });
     } catch {
-      onStatusChange(candidate.id, prev); // rollback
+      onStatusChange(candidate.id, prev);
       toast.error("Could not update stage. Please try again.");
     }
   };
 
-  // ── File upload ────────────────────────────────────────────────────────
-  const processFile = useCallback(
-    async (file: File) => {
-      if (!candidate) return;
-      const allowed = [".pdf", ".docx", ".txt"];
-      const ext = "." + file.name.split(".").pop()?.toLowerCase();
-      if (!allowed.includes(ext)) {
-        toast.error("Unsupported file", { description: "Upload a .pdf, .docx, or .txt file." });
-        return;
-      }
+  // ── Transcript upload ──────────────────────────────────────────────────────
+  const handleTranscriptUpload = useCallback(async (file: File) => {
+    if (!candidate) return;
+    const ext = "." + file.name.split(".").pop()?.toLowerCase();
+    if (![".pdf", ".docx"].includes(ext)) {
+      toast.error("Unsupported file", { description: "Use .pdf or .docx for transcripts." });
+      return;
+    }
 
-      setIsUploading(true);
-      setUploadProgress(10);
-      setSynthesis(null);
+    setTranscriptState({ isUploading: true, progress: 10, savedFileName: null });
+    setSynthesis(null);
+    const interval = setInterval(() =>
+      setTranscriptState((s) => ({ ...s, progress: Math.min(s.progress + 7, 85) })), 700
+    );
 
-      const interval = setInterval(() => {
-        setUploadProgress((p) => Math.min(p + 7, 85));
-      }, 700);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("candidateId", candidate.id);
 
-      try {
-        const form = new FormData();
-        form.append("file", file);
-        form.append("candidateId", candidate.id);
+      const res = await fetch("/api/process-transcript", { method: "POST", body: form });
+      clearInterval(interval);
+      setTranscriptState((s) => ({ ...s, progress: 100 }));
 
-        const res = await fetch("/api/process-transcript", { method: "POST", body: form });
-        clearInterval(interval);
-        setUploadProgress(100);
+      if (!res.ok) { const e = await res.json(); throw new Error(e.message || "Failed"); }
+      const data = await res.json();
+      setSynthesis(data.synthesized);
+      setTranscriptState({ isUploading: false, progress: 0, savedFileName: file.name });
+      toast.success("Transcript processed", {
+        description: `${data.synthesized.totalTurns} Q&A turns extracted and saved.`,
+      });
+    } catch (err: any) {
+      clearInterval(interval);
+      setTranscriptState({ isUploading: false, progress: 0, savedFileName: null });
+      toast.error("Transcript processing failed", { description: err.message });
+    }
+  }, [candidate]);
 
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.message || "Processing failed");
-        }
+  // ── Interviewer notes upload ───────────────────────────────────────────────
+  const handleNotesUpload = useCallback(async (file: File) => {
+    if (!candidate) return;
+    const ext = "." + file.name.split(".").pop()?.toLowerCase();
+    if (![".pdf", ".docx"].includes(ext)) {
+      toast.error("Unsupported file", { description: "Use .pdf or .docx for notes." });
+      return;
+    }
 
-        const data = await res.json();
-        setSynthesis(data.synthesized);
-        toast.success("Transcript processed", {
-          description: `${data.synthesized.totalTurns} Q&A turns extracted and saved.`,
-        });
-      } catch (err: any) {
-        clearInterval(interval);
-        toast.error("Processing failed", { description: err.message });
-      } finally {
-        setIsUploading(false);
-        setTimeout(() => setUploadProgress(0), 1500);
-      }
-    },
-    [candidate]
-  );
+    setNotesState({ isUploading: true, progress: 10, savedFileName: null });
+    const interval = setInterval(() =>
+      setNotesState((s) => ({ ...s, progress: Math.min(s.progress + 10, 85) })), 400
+    );
+
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("candidateId", candidate.id);
+
+      const res = await fetch("/api/upload-notes", { method: "POST", body: form });
+      clearInterval(interval);
+      setNotesState((s) => ({ ...s, progress: 100 }));
+
+      if (!res.ok) { const e = await res.json(); throw new Error(e.message || "Failed"); }
+      setNotesState({ isUploading: false, progress: 0, savedFileName: file.name });
+      toast.success("Interviewer notes saved", {
+        description: `${file.name} uploaded and stored for ${candidate.name}.`,
+      });
+    } catch (err: any) {
+      clearInterval(interval);
+      setNotesState({ isUploading: false, progress: 0, savedFileName: null });
+      toast.error("Notes upload failed", { description: err.message });
+    }
+  }, [candidate]);
 
   if (!candidate) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { setSynthesis(null); setUploadProgress(0); onClose(); } }}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          setSynthesis(null);
+          setTranscriptState({ isUploading: false, progress: 0, savedFileName: null });
+          setNotesState({ isUploading: false, progress: 0, savedFileName: null });
+          onClose();
+        }
+      }}
+    >
       <DialogContent className="w-[95vw] max-w-[95vw] h-[90vh] flex flex-col gap-0 p-0 overflow-hidden rounded-xl shadow-2xl border border-slate-200">
 
-        {/* ── Header ────────────────────────────────────────────────────── */}
+        {/* ── Header ──────────────────────────────────────────────────────── */}
         <DialogHeader className="shrink-0 px-6 pt-4 pb-3 border-b border-slate-100 bg-white">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 min-w-0">
@@ -183,7 +355,7 @@ export function CandidateActionsDialog({
                   {candidate.name}
                 </DialogTitle>
                 <DialogDescription className="text-[11px] text-slate-400 mt-0.5">
-                  Candidate actions — stage management, resume &amp; transcript review.
+                  Candidate Actions — stage management, document uploads &amp; resume review.
                 </DialogDescription>
               </div>
             </div>
@@ -193,34 +365,32 @@ export function CandidateActionsDialog({
           </div>
         </DialogHeader>
 
-        {/* ── Scrollable body ────────────────────────────────────────────── */}
-        <div className="flex-1 min-h-0 overflow-y-auto bg-slate-50/20">
-          <div className="px-6 py-5 space-y-6">
+        {/* ── Scrollable Body ──────────────────────────────────────────────── */}
+        <div className="flex-1 min-h-0 overflow-y-auto bg-slate-50/30">
+          <div className="px-6 py-5 space-y-6 max-w-5xl">
 
-            {/* ═══ SECTION 1: Stage Management (always first) ══════════════ */}
+            {/* ═══ SECTION 1 · Stage Management ════════════════════════════ */}
             <section className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
               <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
                 Stage Management
               </h3>
 
-              <div className="flex items-center gap-4 flex-wrap">
-                <div className="flex-1 min-w-40">
+              <div className="flex items-end gap-4 flex-wrap">
+                {/* Stage selector */}
+                <div className="flex-1 min-w-44">
                   <label className="text-xs text-slate-500 mb-1.5 block font-medium">Move to stage</label>
-                  <Select value={currentStatus} onValueChange={(v) => handleStatusChange(v as CandidateStatus)}>
+                  <Select
+                    value={currentStatus}
+                    onValueChange={(v) => handleStatusChange(v as CandidateStatus)}
+                  >
                     <SelectTrigger className="h-9 text-sm border-slate-200 bg-white">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {STAGE_OPTIONS.map((s) => (
                         <SelectItem key={s} value={s}>
-                          <span className={`inline-flex items-center gap-2`}>
-                            <span className={`w-2 h-2 rounded-full shrink-0 ${
-                              s === "Applied" ? "bg-slate-400"
-                              : s === "Screening" ? "bg-blue-400"
-                              : s === "Shortlisted" ? "bg-emerald-400"
-                              : s === "Interview Scheduled" ? "bg-violet-400"
-                              : "bg-rose-400"
-                            }`} />
+                          <span className="inline-flex items-center gap-2">
+                            <span className={`w-2 h-2 rounded-full shrink-0 ${STAGE_DOT[s]}`} />
                             {s}
                           </span>
                         </SelectItem>
@@ -229,88 +399,64 @@ export function CandidateActionsDialog({
                   </Select>
                 </div>
 
-                {/* Quick action buttons — gated by stage */}
-                <div className="flex items-end gap-2 flex-wrap">
-                  {isAdvanced ? (
-                    <>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-xs text-slate-400 font-medium">Interview Toolkit</label>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-xs border-violet-200 text-violet-700 hover:bg-violet-50 h-9"
-                            onClick={() => onOpenGuide(candidate)}
-                          >
-                            <FileText className="w-3.5 h-3.5 mr-1.5" />
-                            Interview Guide
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-xs border-slate-200 text-slate-600 hover:bg-slate-50 h-9"
-                            disabled={isUploading}
-                            onClick={() => fileInputRef.current?.click()}
-                          >
-                            {isUploading
-                              ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                              : <Upload className="w-3.5 h-3.5 mr-1.5" />
-                            }
-                            Upload Transcript
-                          </Button>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="flex items-center gap-1.5 text-xs text-slate-400 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2">
-                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                      Interview Guide &amp; Transcript upload unlock at <span className="font-semibold text-violet-600 ml-1">Interview Scheduled</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Upload progress bar */}
-              {isUploading && (
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    Processing transcript with AI…
+                {/* Interview Guide button — gated */}
+                {isAdvanced ? (
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-slate-400 font-medium">Interview Toolkit</label>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs border-violet-200 text-violet-700 hover:bg-violet-50 h-9"
+                      onClick={() => onOpenGuide(candidate)}
+                    >
+                      <FileText className="w-3.5 h-3.5 mr-1.5" />
+                      Interview Guide
+                    </Button>
                   </div>
-                  <Progress value={uploadProgress} className="h-1.5" />
-                </div>
-              )}
-
-              {/* Hidden file input */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.docx,.txt"
-                className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) processFile(f); e.target.value = ""; }}
-              />
-
-              {/* Drag-and-drop zone — only shows if advanced */}
-              {isAdvanced && (
-                <div
-                  onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
-                  onDragLeave={() => setIsDragOver(false)}
-                  onDrop={(e) => { e.preventDefault(); setIsDragOver(false); const f = e.dataTransfer.files?.[0]; if (f) processFile(f); }}
-                  onClick={() => !isUploading && fileInputRef.current?.click()}
-                  className={`flex items-center justify-center gap-3 border-2 border-dashed rounded-lg py-3 px-4 cursor-pointer transition-colors text-xs
-                    ${isDragOver ? "border-violet-400 bg-violet-50 text-violet-600"
-                    : "border-slate-200 text-slate-400 hover:border-violet-300 hover:text-violet-500 hover:bg-violet-50/30"}
-                    ${isUploading ? "pointer-events-none opacity-50" : ""}`}
-                >
-                  <Upload className="w-4 h-4 shrink-0" />
-                  <span>
-                    Drop .pdf, .docx, or .txt transcript here, or click <span className="font-semibold">Upload Transcript</span> above
-                  </span>
-                </div>
-              )}
+                ) : (
+                  <div className="flex items-center gap-1.5 text-xs text-slate-400 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 self-end mb-0.5">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    Uploads &amp; Interview Guide unlock at
+                    <span className="font-semibold text-violet-600 ml-1">Interview Scheduled</span>
+                  </div>
+                )}
+              </div>
             </section>
 
-            {/* ═══ SECTION 2: Synthesis Result (if uploaded) ═══════════════ */}
+            {/* ═══ SECTION 2 · Document Uploads (gated) ════════════════════ */}
+            {isAdvanced && (
+              <section className="space-y-3">
+                <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                  Document Uploads
+                </h3>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  {/* Transcript upload */}
+                  <UploadCard
+                    label="Interview Transcript"
+                    description="AI will synthesize Q&A pairs from the raw transcript"
+                    icon={<FileAudio2 className="w-4 h-4" />}
+                    accentClass="violet"
+                    state={transcriptState}
+                    onFileSelect={handleTranscriptUpload}
+                    accept=".pdf,.docx"
+                  />
+
+                  {/* Interviewer notes upload */}
+                  <UploadCard
+                    label="Interviewer Notes"
+                    description="Raw observations, ratings, and comments from the interviewer"
+                    icon={<PenLine className="w-4 h-4" />}
+                    accentClass="amber"
+                    state={notesState}
+                    onFileSelect={handleNotesUpload}
+                    accept=".pdf,.docx"
+                  />
+                </div>
+              </section>
+            )}
+
+            {/* ═══ SECTION 3 · Transcript Synthesis Result ════════════════ */}
             {synthesis && (
               <section className="space-y-4">
                 <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
@@ -325,7 +471,10 @@ export function CandidateActionsDialog({
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {synthesis.keyMetrics.map((m, i) => (
-                        <span key={i} className="text-xs bg-slate-50 border border-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-medium">
+                        <span
+                          key={i}
+                          className="text-xs bg-slate-50 border border-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-medium"
+                        >
                           {m}
                         </span>
                       ))}
@@ -368,7 +517,9 @@ export function CandidateActionsDialog({
                       <div key={i} className="bg-white border border-slate-200 rounded-xl overflow-hidden">
                         {turn.mainQuestion && (
                           <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
-                            <p className="text-xs font-semibold text-slate-700 leading-relaxed">Q: {turn.mainQuestion}</p>
+                            <p className="text-xs font-semibold text-slate-700 leading-relaxed">
+                              Q: {turn.mainQuestion}
+                            </p>
                           </div>
                         )}
                         {turn.answerSummary && (
@@ -393,13 +544,12 @@ export function CandidateActionsDialog({
               </section>
             )}
 
-            {/* ═══ SECTION 3: Resume Profile ════════════════════════════════ */}
+            {/* ═══ SECTION 4 · Resume Profile ══════════════════════════════ */}
             <section className="space-y-4">
               <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
                 Resume Profile
               </h3>
 
-              {/* Summary */}
               {candidate.resume_summary && (
                 <div className="bg-white border border-slate-200 rounded-xl p-4">
                   <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
@@ -411,7 +561,6 @@ export function CandidateActionsDialog({
                 </div>
               )}
 
-              {/* Experience */}
               <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-4">
                 <div className="flex items-center gap-2 text-xs font-bold text-indigo-600 uppercase tracking-wider">
                   <Briefcase className="w-3.5 h-3.5" /> Work Experience
@@ -424,7 +573,9 @@ export function CandidateActionsDialog({
                           <h4 className="text-sm font-bold text-slate-900">{exp.role}</h4>
                           <p className="text-xs text-slate-500">{exp.company}</p>
                         </div>
-                        <span className="text-[11px] text-slate-400 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded shrink-0">{exp.duration}</span>
+                        <span className="text-[11px] text-slate-400 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded shrink-0">
+                          {exp.duration}
+                        </span>
                       </div>
                       <ul className="space-y-1">
                         {exp.achievements.map((ach, j) => (
@@ -438,14 +589,16 @@ export function CandidateActionsDialog({
                 </div>
               </div>
 
-              {/* Education */}
               <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
                 <div className="flex items-center gap-2 text-xs font-bold text-amber-600 uppercase tracking-wider">
                   <BookOpen className="w-3.5 h-3.5" /> Education
                 </div>
                 <div className="space-y-2">
                   {candidate.profile_data.education.map((edu, i) => (
-                    <div key={i} className="flex flex-col p-3 rounded-lg bg-amber-50/30 border border-amber-100/50">
+                    <div
+                      key={i}
+                      className="flex flex-col p-3 rounded-lg bg-amber-50/30 border border-amber-100/50"
+                    >
                       <span className="text-sm font-bold text-slate-800">{edu.school}</span>
                       <span className="text-xs text-slate-500">{edu.degree}</span>
                     </div>
@@ -454,7 +607,6 @@ export function CandidateActionsDialog({
               </div>
             </section>
 
-            {/* Bottom spacing */}
             <div className="h-4" />
           </div>
         </div>
