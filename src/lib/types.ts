@@ -4,6 +4,7 @@ export interface Role {
   id: string;
   title: string; // e.g., "Senior Product Manager"
   status: RoleStatus;
+  full_jd_text?: string | null;
   appliedCount: number;
   rejectedCount: number;
   reviewCount: number;

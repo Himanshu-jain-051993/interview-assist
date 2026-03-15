@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import pg from 'pg';
-import { Role } from '@/types/schema';
+import { Role } from '@/lib/types';
 
 const { Pool } = pg;
 
@@ -34,6 +34,7 @@ export async function GET() {
         id: r.id,
         title: r.title,
         status: 'Open',
+        full_jd_text: r.full_jd_text,
         appliedCount: Object.values(counts).reduce((a, b) => a + b, 0),
         rejectedCount: counts['Rejected'] || 0,
         reviewCount: counts['Applied'] || 0, // In this schema 'Applied' means under review

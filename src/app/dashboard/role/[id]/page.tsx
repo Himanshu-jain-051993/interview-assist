@@ -7,13 +7,18 @@ import { Badge } from "@/components/ui/badge";
 import { 
   ArrowLeft, 
   Users, 
-  ArrowUpRight, 
-  Filter, 
-  Download,
+  FileText,
   Loader2
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface RoleDetailPageProps {
   params: Promise<{ id: string }>;
@@ -110,18 +115,24 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-              <Filter className="w-4 h-4 mr-2" />
-              Filter
-            </Button>
-            <Button variant="outline" size="sm">
-              <Download className="w-4 h-4 mr-2" />
-              Export CSV
-            </Button>
-            <Button className="bg-indigo-600 hover:bg-indigo-700">
-              Post to Job Boards
-              <ArrowUpRight className="w-4 h-4 ml-2" />
-            </Button>
+            <Dialog>
+              <DialogTrigger render={<Button variant="outline" className="text-indigo-600 border-indigo-200 hover:bg-indigo-50" />}>
+                <FileText className="w-4 h-4 mr-2" />
+                View Job Description
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col overflow-hidden bg-slate-50 p-0 border-slate-200">
+                <DialogHeader className="px-6 py-4 bg-white border-b border-slate-200">
+                  <DialogTitle className="text-xl font-bold text-slate-800">
+                    Job Description: {role.title}
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="flex-1 overflow-y-auto px-8 py-6">
+                  <div className="prose prose-sm max-w-none text-slate-600 whitespace-pre-wrap">
+                    {role.full_jd_text || <span className="italic">No job description available for this role.</span>}
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </div>
@@ -130,11 +141,6 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-bold text-slate-800">Candidate Pipeline</h2>
-          <div className="flex bg-slate-100 p-1 rounded-lg">
-            <button className="px-3 py-1.5 text-xs font-bold bg-white text-slate-900 rounded-md shadow-sm">All</button>
-            <button className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-700">Screening</button>
-            <button className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-700">Shortlisted</button>
-          </div>
         </div>
         
         {candidates.length > 0 ? (

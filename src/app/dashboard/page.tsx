@@ -56,10 +56,6 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Active Hiring Pipelines</h1>
           <p className="text-slate-500 mt-1">Manage your roles and track candidate progress across the funnel.</p>
         </div>
-        <Button className="bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-100">
-          <Plus className="w-4 h-4 mr-2" />
-          Create New Role
-        </Button>
       </div>
 
       {roles.length === 0 ? (
