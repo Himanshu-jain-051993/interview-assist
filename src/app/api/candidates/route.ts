@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import pg from 'pg';
-import { Candidate, CandidateStatus } from '@/types/schema';
+import { Candidate, CandidateStatus } from '@/lib/types';
 
 const { Pool } = pg;
 

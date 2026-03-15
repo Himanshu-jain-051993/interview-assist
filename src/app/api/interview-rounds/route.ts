@@ -23,6 +23,14 @@ export async function GET(req: NextRequest) {
 }
 
 import mammoth from "mammoth";
+// Fix for DOMMatrix undefined error in pdf-parse on Next.js Serverless
+if (typeof global.DOMMatrix === 'undefined') {
+  (global as any).DOMMatrix = class DOMMatrix {};
+}
+if (typeof global.Path2D === 'undefined') {
+  (global as any).Path2D = class Path2D {};
+}
+
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const pdfParse = require("pdf-parse");
 

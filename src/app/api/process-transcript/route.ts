@@ -2,7 +2,14 @@ import { NextResponse } from "next/server";
 import pg from "pg";
 import { synthesizeTranscript } from "@/lib/agents/transcript-synthesizer";
 import mammoth from "mammoth";
-// pdf-parse is CommonJS; require() avoids ESM default-export mismatch
+// Fix for DOMMatrix undefined error in pdf-parse on Next.js Serverless
+if (typeof global.DOMMatrix === 'undefined') {
+  (global as any).DOMMatrix = class DOMMatrix {};
+}
+if (typeof global.Path2D === 'undefined') {
+  (global as any).Path2D = class Path2D {};
+}
+
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const pdfParse = require("pdf-parse") as (buffer: Buffer) => Promise<{ text: string }>;
 
