@@ -59,76 +59,70 @@ export async function evaluateInterviewRound(
     .join("\n");
 
   const prompt = `
-ROLE: You are the Lead Talent Strategist at Zomato conducting a cumulative, evidence-based evaluation of a candidate's interview journey.
+ROLE: You are the Hiring Committee Lead. Your goal is to produce a high-fidelity, balanced evaluation by auditing AI evidence against human sentiment.
 
-CORE MISSION: Assess this candidate's performance in the current round while integrating all prior round data to build a holistic, evolving picture. Never lose context from previous rounds.
+DATA SOURCES:
 
-━━━ INPUT DATA ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ROLE RUBRICS:
+${rubricList}
 
-JOB DESCRIPTION:
+CANDIDATE INFO:
+Name: ${candidate.name}
 Role: ${role.title} (${role.category} - ${role.level})
 ${role.job_description}
 
-CANDIDATE RESUME SUMMARY:
-Name: ${candidate.name}
-Profile: ${JSON.stringify(candidate.profile_data, null, 2).substring(0, 3000)}
-
-MODULAR RUBRICS:
-${rubricList}
-
-CURRENT ROUND:
-Type: ${currentRound.roundType}
-Transcript:
-${currentRound.transcriptText || "(No transcript provided)"}
-
-Interviewer Notes:
-${currentRound.interviewerNotes || "(No notes provided)"}
-
-PREVIOUS ROUND FEEDBACK:
+ALL PREVIOUS ROUND FEEDBACK:
 ${previousFeedbackText}
 
-━━━ CORE EVALUATION LOGIC ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CURRENT ROUND (${currentRound.roundType}) TRANSCRIPT:
+${currentRound.transcriptText || "(No transcript provided)"}
 
-1. DYNAMIC MAPPING: For every rubric parameter, scan the current transcript AND interviewer notes for specific evidence (direct quotes preferred).
+CURRENT ROUND (${currentRound.roundType}) INTERVIEWER NOTES:
+${currentRound.interviewerNotes || "(No notes provided)"}
 
-2. CUMULATIVE EVOLUTION: Compare findings with previous_feedback. Explicitly identify:
-   - "Strength Validated" — candidate reinforced a prior signal
-   - "Gap Mitigated" — candidate addressed a prior concern
-   - "New Red Flag" — a new negative signal emerged
-   - "New Strong Signal" — a new positive signal emerged
-   - "Unchanged" — insufficient new evidence
+GOVERNANCE RULES & EDGE-CASE HANDLING:
 
-3. WEIGHTED CONFLICT RESOLUTION (MASTER RULE):
-   When AI analysis of the transcript CONFLICTS with Interviewer Notes on a rubric score:
-   - Human Note = 70% weight
-   - AI Transcript Evidence = 30% weight
-   - You MUST state "Human weighting applied: [reason]" when this shifts the final score.
+Rule 1: Attribute-Specific Isolation (Anti-Skewing)
+Human notes MUST only influence the specific rubric parameter they explicitly reference.
+Example: If a note says "Candidate was rude," this heavily weights the Culture Fit or Execution & Stakeholder Orchestration rubric. It is FORBIDDEN to let this sentiment reduce the score for Analytical Rigor or System Architecture if the transcript shows technical mastery.
 
-4. HIRING CONFIDENCE INDEX: A percentage (0-100%) reflecting overall rubric alignment and cumulative trajectory. Must account for round progression — early negative signals can be overcome.
+Rule 2: Conflict Audit (The 70/30 Threshold)
+Apply the 70% human weightage ONLY if the human provides a specific technical or behavioral justification.
+Edge Case (Vague Subjectivity): If an interviewer provides a subjective label (e.g., "proud," "not a fit," "bad vibes") without a supporting transcript example (e.g., interrupting the interviewer, dismissing feedback), the AI must:
+- Assign the 70% weight to the human score.
+- Flag a "Subjectivity Warning": Note that the score is human-skewed and lacks transcript-backed evidence.
+- Maintain the AI's objective evidence-based score as a "Secondary Marker."
 
-━━━ OUTPUT FORMAT (JSON only, no markdown) ━━━━━━━━━━━━━━━━
+Rule 3: Technical Overrule
+If an interviewer notes "Struggled with SQL," but the transcript shows the candidate correctly articulated and solved a complex JOIN or WINDOW FUNCTION, the AI should:
+- Note the human's perception.
+- Maintain a "Good/Strong" rating for the technical skill, citing the transcript as the Ground Truth.
 
+Rule 4: Cumulative Re-Weighting
+If one interviewer is an outlier (highly negative) while three other transcripts show consistent high performance, the AI must highlight the "Outlier Dissonance" in the final summary.
+
+OUTPUT SPECIFICATION (JSON ONLY, NO MARKDOWN, NO CODE BLOCKS):
 {
-  "roundType": "${currentRound.roundType}",
+  "roundScore": 8.0,
+  "cumulativeScore": 7.5,
+  "hiringThesis": "A 3-sentence summary of the Hiring Thesis.",
+  "skewAlert": "Explicitly list any parameters where the score was significantly lowered by human subjectivity despite technical competence.",
   "evaluationSummary": "2-3 sentence executive summary of this round",
+  "hiringConfidenceIndex": 85,
+  "recommendedNextStep": "Proceed to Final | Reject | Make Offer",
+  "keyStrengths": ["Strength 1"],
+  "keyGaps": ["Gap 1"],
   "rubricEvaluations": [
     {
-      "parameter": "Rubric parameter name",
-      "currentEvidence": "Direct quote or observation from this round",
-      "cumulativeDelta": "How this round changed our understanding. One of: Strength Validated | Gap Mitigated | New Red Flag | New Strong Signal | Unchanged",
-      "deltaExplanation": "Specific explanation of the delta",
-      "weightedScore": 7.5,
-      "humanWeightingApplied": false,
-      "humanWeightingReason": ""
+      "parameter": "Fetched from ROLE RUBRICS",
+      "grade": "Poor | Borderline | Good | Strong",
+      "aiEvidence": "Specific quote from the transcript proving technical/strategic depth.",
+      "interviewerInfluence": "How much the human notes shifted this specific grade.",
+      "conflictAudit": "Mandatory if the AI evidence is 'Strong' but the Human note is 'Poor'. Explain why the final grade landed where it did.",
+      "subjectivityWarning": true,
+      "secondaryMarker": "AI objective score without vague human notes"
     }
-  ],
-  "hiringConfidenceIndex": 72,
-  "roundScore": 7.5,
-  "cumulativeScore": 7.0,
-  "keyStrengths": ["Strength 1", "Strength 2"],
-  "keyGaps": ["Gap 1", "Gap 2"],
-  "recommendedNextStep": "Proceed to Technical R2 | Hold pending reference check | Reject | Offer",
-  "cumulativeNarrative": "A 3-4 sentence story of the candidate's journey across all rounds so far"
+  ]
 }
 `;
 

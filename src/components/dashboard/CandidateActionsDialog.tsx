@@ -212,10 +212,18 @@ function RoundCard({ round, index }: { round: InterviewRound; index: number }) {
           </div>
 
           {/* Narrative */}
-          {fb.cumulativeNarrative && (
+          {fb.hiringThesis && (
             <p className="text-sm text-slate-600 leading-relaxed border-l-2 border-indigo-200 pl-3 italic">
-              "{fb.cumulativeNarrative}"
+              "{fb.hiringThesis}"
             </p>
+          )}
+          
+          {/* Skew Alert */}
+          {fb.skewAlert && (
+            <div className="bg-rose-50 border border-rose-200 rounded p-3 text-sm text-rose-700 flex gap-2">
+              <span className="font-bold">⚠️ Skew Alert:</span> 
+              <span>{fb.skewAlert}</span>
+            </div>
           )}
 
           {/* Recommended next step */}
@@ -271,30 +279,35 @@ function RoundCard({ round, index }: { round: InterviewRound; index: number }) {
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-xs font-bold text-slate-800">{re.parameter}</span>
                       <div className="flex items-center gap-2">
-                        {re.cumulativeDelta && re.cumulativeDelta !== "Unchanged" && (
-                          <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
-                            re.cumulativeDelta.includes("Validated") || re.cumulativeDelta.includes("Mitigated") || re.cumulativeDelta.includes("Strong")
+                        {re.grade && (
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${
+                            re.grade === "Strong" || re.grade === "Good"
                               ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                              : re.grade === "Borderline" 
+                              ? "bg-amber-50 text-amber-700 border border-amber-100"
                               : "bg-rose-50 text-rose-700 border border-rose-100"
                           }`}>
-                            {re.cumulativeDelta}
+                            {re.grade}
                           </span>
                         )}
-                        <span className={`text-sm font-bold tabular-nums ${
-                          re.weightedScore >= 8 ? "text-emerald-600" : re.weightedScore >= 6 ? "text-amber-600" : "text-rose-600"
-                        }`}>
-                          {re.weightedScore}/10
-                        </span>
                       </div>
                     </div>
-                    {re.currentEvidence && (
-                      <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-2 rounded">{re.currentEvidence}</p>
+                    {re.aiEvidence && (
+                      <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-2 rounded">
+                        <strong>AI Evidence:</strong> {re.aiEvidence}
+                      </p>
                     )}
-                    {re.humanWeightingApplied && re.humanWeightingReason && (
+                    {re.interviewerInfluence && (
                       <div className="flex items-start gap-1.5 text-[10px] text-amber-700 bg-amber-50 p-1.5 rounded border border-amber-100 mt-1">
                         <span className="shrink-0 text-amber-500 font-bold">⚖</span>
-                        <p>Human weighting applied: {re.humanWeightingReason}</p>
+                        <p><strong>Human Influence:</strong> {re.interviewerInfluence}</p>
                       </div>
+                    )}
+                    {re.conflictAudit && (
+                       <div className="flex items-start gap-1.5 text-[10px] text-rose-700 bg-rose-50 p-1.5 rounded border border-rose-100 mt-1">
+                         <span className="shrink-0 text-rose-500 font-bold">⚠️</span>
+                         <p><strong>Conflict Audit:</strong> {re.conflictAudit}</p>
+                       </div>
                     )}
                   </div>
                 ))}
