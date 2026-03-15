@@ -72,20 +72,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             active={pathname === '/dashboard'} 
             isCollapsed={isCollapsed}
           />
-          <SidebarLink 
-            href="/dashboard/candidates" 
-            icon={<Users className="w-4 h-4" />} 
-            label="All Candidates" 
-            active={pathname.includes('/candidates')} 
-            isCollapsed={isCollapsed}
-          />
-          <SidebarLink 
-            href="/dashboard/settings" 
-            icon={<Settings className="w-4 h-4" />} 
-            label="Settings" 
-            active={pathname.includes('/settings')} 
-            isCollapsed={isCollapsed}
-          />
         </nav>
 
         <div className="p-4 mt-auto border-t border-slate-100">
@@ -127,14 +113,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="relative hidden lg:block">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input 
-                type="text" 
-                placeholder="Search candidates..." 
-                className="pl-9 pr-4 py-2 bg-slate-100 border-none rounded-full text-sm w-64 focus:ring-2 focus:ring-indigo-500 transition-all"
-              />
-            </div>
             <Button variant="ghost" size="icon" className="text-slate-500">
               <Bell className="w-5 h-5" />
             </Button>

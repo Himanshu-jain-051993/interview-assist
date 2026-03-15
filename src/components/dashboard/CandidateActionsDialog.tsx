@@ -321,20 +321,28 @@ function AddRoundForm({
   onCancel: () => void;
 }) {
   const [roundType, setRoundType] = useState("");
-  const [transcript, setTranscript] = useState("");
-  const [notes, setNotes] = useState("");
+  const [transcriptFile, setTranscriptFile] = useState<File | null>(null);
+  const [notesFile, setNotesFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const transcriptRef = useRef<HTMLInputElement>(null);
+  const notesRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async () => {
     if (!roundType) { toast.error("Please select a round type"); return; }
-    if (!transcript.trim() && !notes.trim()) { toast.error("Please provide transcript or notes"); return; }
+    if (!transcriptFile && !notesFile) { toast.error("Please provide transcript or notes"); return; }
 
     setIsSubmitting(true);
     try {
+      const formData = new FormData();
+      formData.append("candidateId", candidateId);
+      formData.append("roleId", roleId);
+      formData.append("roundType", roundType);
+      if (transcriptFile) formData.append("transcriptFile", transcriptFile);
+      if (notesFile) formData.append("notesFile", notesFile);
+
       const res = await fetch("/api/interview-rounds", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ candidateId, roleId, roundType, transcriptText: transcript, interviewerNotes: notes }),
+        body: formData,
       });
       if (!res.ok) {
         const err = await res.json();
@@ -360,7 +368,7 @@ function AddRoundForm({
       {/* Round type */}
       <div className="space-y-1.5">
         <label className="text-xs font-semibold text-slate-700">Round Type</label>
-        <Select value={roundType} onValueChange={setRoundType}>
+        <Select value={roundType} onValueChange={(val) => setRoundType(val ?? "")}>
           <SelectTrigger className="h-9 text-sm border-slate-200">
             <SelectValue placeholder="Select round…" />
           </SelectTrigger>
@@ -373,29 +381,31 @@ function AddRoundForm({
       </div>
 
       {/* Interviewer notes */}
-      <div className="space-y-1.5">
+      <div className="space-y-1.5 flex flex-col">
         <label className="text-xs font-semibold text-slate-700">
           Interviewer Notes <span className="text-slate-400 font-normal ml-1">(weighted at 70%)</span>
         </label>
-        <Textarea
-          placeholder="Key observations, concerns, and standout moments…"
-          className="text-sm resize-none border-slate-200 min-h-[100px] leading-relaxed"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-        />
+        <div 
+          onClick={() => notesRef.current?.click()}
+          className="border border-dashed border-slate-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 hover:border-indigo-300 transition-colors"
+        >
+          {notesFile ? <p className="text-sm font-medium text-indigo-700">{notesFile.name}</p> : <p className="text-sm text-slate-500">Upload .pdf or .docx file</p>}
+        </div>
+        <input type="file" ref={notesRef} className="hidden" accept=".pdf,.docx,.txt" onChange={(e) => setNotesFile(e.target.files?.[0] || null)} />
       </div>
 
       {/* Transcript */}
-      <div className="space-y-1.5">
+      <div className="space-y-1.5 flex flex-col">
         <label className="text-xs font-semibold text-slate-700">
-          Interview Transcript <span className="text-slate-400 font-normal ml-1">(optional — paste text)</span>
+          Interview Transcript <span className="text-slate-400 font-normal ml-1">(optional)</span>
         </label>
-        <Textarea
-          placeholder="Paste the interview transcript here…"
-          className="text-sm resize-none border-slate-200 min-h-[120px] leading-relaxed font-mono"
-          value={transcript}
-          onChange={(e) => setTranscript(e.target.value)}
-        />
+        <div 
+          onClick={() => transcriptRef.current?.click()}
+          className="border border-dashed border-slate-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 hover:border-indigo-300 transition-colors"
+        >
+          {transcriptFile ? <p className="text-sm font-medium text-indigo-700">{transcriptFile.name}</p> : <p className="text-sm text-slate-500">Upload .pdf or .docx file</p>}
+        </div>
+        <input type="file" ref={transcriptRef} className="hidden" accept=".pdf,.docx,.txt" onChange={(e) => setTranscriptFile(e.target.files?.[0] || null)} />
       </div>
 
       <Button
@@ -483,15 +493,12 @@ export function CandidateActionsDialog({
         <DialogHeader className="shrink-0 px-6 pt-5 pb-4 border-b border-slate-200 bg-white">
           <div className="flex items-start justify-between gap-6">
             <div className="flex items-center gap-4 min-w-0">
-              <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200">
-                <User className="w-6 h-6 text-slate-400" />
-              </div>
               <div className="min-w-0 space-y-1">
                 <DialogTitle className="text-xl font-bold text-slate-900 leading-snug truncate">
                   {candidate.name}
                 </DialogTitle>
                 <div className="flex items-center gap-3">
-                  <Badge className={`font-semibold text-[11px] py-0.5 px-2.5 ${STATUS_COLORS[currentStatus]}`}>
+                  <Badge className={`font-semibold text-[11px] py-0.5 px-2.5 ${STAGE_COLORS[currentStatus]}`}>
                     {currentStatus}
                   </Badge>
                   {candidate.resume_score !== null && (

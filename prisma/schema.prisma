@@ -20,8 +20,10 @@ model Role {
   full_jd_text    String?
   content_embedding Unsupported("vector(3072)")?
   created_at        DateTime    @default(now())
-  candidates      Candidate[]
+  updated_at        DateTime    @updatedAt
+  candidates       Candidate[]
   interview_guides InterviewGuide[]
+  interview_rounds InterviewRound[]
 }
 
 
@@ -50,10 +52,13 @@ model Candidate {
   profile_data Json?
   content_embedding Unsupported("vector(3072)")?
   created_at        DateTime    @default(now())
+  status_updated_at DateTime    @default(now())
   interviews        Interview[]
   transcripts       InterviewTranscript[]
   interview_guides  InterviewGuide[]
+  interview_rounds  InterviewRound[]
 }
+
 
 model Interview {
   id                String             @id @default(cuid())
@@ -97,5 +102,19 @@ model InterviewGuide {
   role         Role      @relation(fields: [role_id], references: [id], onDelete: Cascade)
 
   @@unique([candidate_id, role_id])
+}
+
+model InterviewRound {
+  id                String    @id @default(cuid())
+  candidate_id      String
+  role_id           String
+  round_type        String    // Screening | Technical_1 | Technical_2 | Culture_Fit
+  transcript_text   String?
+  interviewer_notes String?
+  ai_feedback_json  Json?
+  cumulative_score  Float?
+  created_at        DateTime  @default(now())
+  candidate         Candidate @relation(fields: [candidate_id], references: [id], onDelete: Cascade)
+  role              Role      @relation(fields: [role_id], references: [id], onDelete: Cascade)
 }
 

@@ -26,7 +26,7 @@ export async function PATCH(
     }
 
     const result = await pool.query(
-      'UPDATE "Candidate" SET stage = $1 WHERE id = $2 RETURNING id, stage',
+      'UPDATE "Candidate" SET stage = $1, status_updated_at = NOW() WHERE id = $2 RETURNING id, stage',
       [status, id]
     );
 
