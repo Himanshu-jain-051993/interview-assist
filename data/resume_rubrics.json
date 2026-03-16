@@ -1,0 +1,222 @@
+{
+  "scoring_scale": {
+    "1": "Poor",
+    "2": "Borderline",
+    "3": "Good",
+    "4": "Strong"
+  },
+  "universal_rubrics": [
+    {
+      "id": "company_scale_similarity",
+      "name": "Company Scale Similarity",
+      "description": "Measures whether the candidate has experience working in organizations with scale comparable to the hiring company.",
+      "levels": {
+        "poor": "Candidate worked only in very small or unrelated scale environments compared to the target company.",
+        "borderline": "Candidate has limited exposure to larger systems or teams but not direct ownership at scale.",
+        "good": "Candidate worked in companies with similar scale in terms of engineering teams, customers, or product complexity.",
+        "strong": "Candidate demonstrated success operating at equal or larger scale organizations (large user base, enterprise systems, high traffic products)."
+      }
+    },
+    {
+      "id": "industry_domain_alignment",
+      "name": "Industry / Domain Alignment",
+      "description": "Measures similarity between candidate industry experience and the job's product or technology domain.",
+      "levels": {
+        "poor": "No relevant industry or product domain experience.",
+        "borderline": "Adjacent domain experience but limited overlap with target industry.",
+        "good": "Relevant industry exposure with transferable product or technical knowledge.",
+        "strong": "Direct experience solving problems within the same industry or product category."
+      }
+    },
+    {
+      "id": "execution_environment_fit",
+      "name": "Execution Environment Fit",
+      "description": "Measures whether the candidate has experience working in environments with similar speed, complexity, and iteration cycles.",
+      "levels": {
+        "poor": "Experience mainly in slow-moving environments with limited product or engineering iteration.",
+        "borderline": "Some exposure to agile or iterative environments but limited evidence of fast delivery.",
+        "good": "Regular experience delivering work in agile teams with frequent releases or product iterations.",
+        "strong": "Proven ability to operate in high-velocity environments with rapid experimentation and product delivery."
+      }
+    },
+    {
+      "id": "culture_fit_signals",
+      "name": "Culture Fit Signals",
+      "description": "Signals indicating collaboration, ownership, communication, and leadership alignment with company culture.",
+      "levels": {
+        "poor": "Resume shows isolated responsibilities with minimal collaboration.",
+        "borderline": "Basic collaboration with limited cross-functional interaction.",
+        "good": "Demonstrates strong collaboration across teams such as engineering, product, and business.",
+        "strong": "Evidence of leadership, cross-functional influence, mentorship, or driving organizational alignment."
+      }
+    },
+    {
+      "id": "career_trajectory_alignment",
+      "name": "Career Trajectory & Seniority Alignment",
+      "description": "Evaluates whether the candidate’s experience and growth trajectory matches the seniority expected in the JD.",
+      "levels": {
+        "poor": "Candidate experience significantly below expected role level.",
+        "borderline": "Some relevant experience but limited leadership or ownership signals.",
+        "good": "Experience aligns well with the role level and responsibilities.",
+        "strong": "Candidate demonstrates progression, leadership growth, and responsibilities exceeding role expectations."
+      }
+    }
+  ],
+  "role_specific_rubrics": {
+    "product_manager": [
+      {
+        "id": "product_strategy",
+        "name": "Product Strategy Ownership",
+        "description": "Measures the candidate’s ownership of product direction and strategic planning.",
+        "levels": {
+          "poor": "No ownership of product roadmap or strategic planning; mostly execution tasks.",
+          "borderline": "Some involvement in roadmap discussions but limited ownership.",
+          "good": "Owns roadmap decisions and prioritization aligned with business goals.",
+          "strong": "Defines multi-quarter product strategy with measurable business outcomes."
+        }
+      },
+      {
+        "id": "product_execution",
+        "name": "Product Delivery & Execution",
+        "description": "Measures ability to deliver products or features successfully.",
+        "levels": {
+          "poor": "No evidence of shipping products or features.",
+          "borderline": "Participation in launches without clear ownership.",
+          "good": "Delivered multiple features or products with measurable adoption.",
+          "strong": "Led complex product launches with significant business impact."
+        }
+      },
+      {
+        "id": "data_driven_decisions",
+        "name": "Data-Driven Product Thinking",
+        "description": "Measures ability to use data and experimentation in product decisions.",
+        "levels": {
+          "poor": "No product metrics or analytics mentioned.",
+          "borderline": "Tracks basic KPIs but limited evidence of data-driven decisions.",
+          "good": "Uses metrics to guide product decisions and feature prioritization.",
+          "strong": "Designs experiments and analytics frameworks improving product metrics."
+        }
+      },
+      {
+        "id": "customer_understanding",
+        "name": "Customer & Market Insight",
+        "description": "Measures understanding of user needs and market opportunities.",
+        "levels": {
+          "poor": "No evidence of customer research or user insight.",
+          "borderline": "Mentions customer feedback but unclear product influence.",
+          "good": "Conducts user research influencing product decisions.",
+          "strong": "Transforms customer insights into product strategy or major features."
+        }
+      }
+    ],
+    "software_engineer": [
+      {
+        "id": "technical_stack_alignment",
+        "name": "Technical Stack Alignment",
+        "description": "Measures alignment between JD technology requirements and candidate experience.",
+        "levels": {
+          "poor": "Required technologies absent from resume.",
+          "borderline": "Limited exposure to required technologies.",
+          "good": "Hands-on experience with most technologies required by the JD.",
+          "strong": "Deep expertise with the tech stack including optimization or architecture work."
+        }
+      },
+      {
+        "id": "system_scale_experience",
+        "name": "System Scale Experience",
+        "description": "Measures experience with large-scale or production systems.",
+        "levels": {
+          "poor": "Only small projects or academic systems mentioned.",
+          "borderline": "Limited production exposure.",
+          "good": "Built or maintained production systems with measurable scale.",
+          "strong": "Designed distributed systems handling high traffic or large datasets."
+        }
+      },
+      {
+        "id": "engineering_impact",
+        "name": "Engineering Impact",
+        "description": "Measures measurable improvements or technical contributions.",
+        "levels": {
+          "poor": "No measurable improvements mentioned.",
+          "borderline": "Some improvements mentioned without metrics.",
+          "good": "Demonstrates measurable system improvements (performance, reliability).",
+          "strong": "Delivered major technical improvements affecting large user bases."
+        }
+      }
+    ],
+    "data_analyst": [
+      {
+        "id": "analytical_skills",
+        "name": "Analytical Skills",
+        "description": "Measures ability to analyze and interpret data.",
+        "levels": {
+          "poor": "Limited analytical tools or techniques used.",
+          "borderline": "Basic SQL or reporting skills.",
+          "good": "Strong analytics using SQL, dashboards, and structured analysis.",
+          "strong": "Advanced analysis using statistical methods or predictive models."
+        }
+      },
+      {
+        "id": "data_scale_complexity",
+        "name": "Data Scale & Complexity",
+        "description": "Measures the scale and complexity of data handled.",
+        "levels": {
+          "poor": "Small datasets or manual reporting tasks.",
+          "borderline": "Moderate datasets with limited complexity.",
+          "good": "Large dataset analysis and dashboard automation.",
+          "strong": "Handles large-scale analytics pipelines or complex data modeling."
+        }
+      },
+      {
+        "id": "business_impact_analysis",
+        "name": "Business Impact of Analysis",
+        "description": "Measures how analytics influenced business decisions.",
+        "levels": {
+          "poor": "Insights without business application.",
+          "borderline": "Some analysis but unclear decision impact.",
+          "good": "Analysis improved product or operational decisions.",
+          "strong": "Insights directly influenced major strategic decisions."
+        }
+      }
+    ],
+    "ai_product_manager": [
+      {
+        "id": "ai_product_experience",
+        "name": "AI Product Experience",
+        "description": "Measures candidate exposure to AI/ML-driven products.",
+        "levels": {
+          "poor": "No AI or ML product exposure.",
+          "borderline": "Limited AI feature involvement.",
+          "good": "Managed AI-enabled features or ML-powered products.",
+          "strong": "Led AI product initiatives delivering measurable outcomes."
+        }
+      },
+      {
+        "id": "ai_technical_fluency",
+        "name": "AI Technical Fluency",
+        "description": "Measures ability to work with ML teams and understand AI systems.",
+        "levels": {
+          "poor": "Minimal understanding of ML or AI technologies.",
+          "borderline": "Basic ML terminology familiarity.",
+          "good": "Understands ML pipelines, model metrics, and training processes.",
+          "strong": "Deep collaboration with ML teams including model lifecycle decisions."
+        }
+      },
+      {
+        "id": "ai_product_impact",
+        "name": "AI Product Impact",
+        "description": "Measures measurable outcomes delivered by AI products.",
+        "levels": {
+          "poor": "AI initiatives without measurable results.",
+          "borderline": "Limited AI product outcomes.",
+          "good": "AI features improved measurable metrics.",
+          "strong": "AI initiatives significantly improved business or product outcomes."
+        }
+      }
+    ]
+  },
+  "evaluation_weights": {
+    "universal_fit_weight": 0.4,
+    "role_specific_weight": 0.6
+  }
+}
