@@ -213,6 +213,41 @@
           "strong": "AI initiatives significantly improved business or product outcomes."
         }
       }
+    ],
+    "technical_program_manager": [
+      {
+        "id": "program_execution_rigor",
+        "name": "Program Execution & Delivery",
+        "description": "Measures the ability to drive complex programs from concept to launch on time and within scope.",
+        "levels": {
+          "poor": "No evidence of owning end-to-end project lifecycles; mostly task-level involvement.",
+          "borderline": "Managed small projects but limited evidence of handling cross-functional complexity.",
+          "good": "Proven track record of delivering multi-month programs with clear milestones and success criteria.",
+          "strong": "Consistently delivers high-stakes, large-scale programs on time with documented business impact."
+        }
+      },
+      {
+        "id": "risk_mitigation_management",
+        "name": "Risk & Issue Management",
+        "description": "Measures the ability to proactively identify, mitigate, and resolve program risks and blockers.",
+        "levels": {
+          "poor": "No mention of risk identification or mitigation strategies.",
+          "borderline": "Identifies issues after they occur but shows limited proactive risk planning.",
+          "good": "Proactively identifies risks and creates 'Path to Green' plans to keep programs on track.",
+          "strong": "Demonstrates 'Sixth Sense' for risk; expertly navigates complex blockers to prevent project delays."
+        }
+      },
+      {
+        "id": "stakeholder_orchestration",
+        "name": "Stakeholder & Dependency Management",
+        "description": "Measures ability to align Engineering, Product, and Ops teams and manage complex inter-dependencies.",
+        "levels": {
+          "poor": "Isolated contributor role with minimal cross-functional interaction.",
+          "borderline": "Basic collaboration with single teams; limited experience managing conflicting priorities.",
+          "good": "Successfully manages dependencies across 3+ distinct departments (e.g., Engineering, Ops, Product).",
+          "strong": "Expertly orchestrates large, multi-departmental groups; drives consensus and accountability in high-stakes environments."
+        }
+      }
     ]
   },
   "evaluation_weights": {
