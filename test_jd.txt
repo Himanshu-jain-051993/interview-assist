@@ -1,0 +1,13 @@
+Job Title: Senior Software Engineer
+Category: Engineering
+Level: Senior
+Industry: Technology
+
+Description:
+We are looking for a Senior Software Engineer with experience in React and Node.js.
+You will be responsible for building high-quality web applications.
+
+Requirements:
+- 5+ years of experience
+- Strong knowledge of Typescript
+- Experience with Supabase and Prisma

@@ -21,3 +21,4 @@ export async function getCandidateById(id: string): Promise<Candidate | undefine
   await new Promise((resolve) => setTimeout(resolve, 300));
   return mockData.candidates.find((c) => c.id === id) as Candidate | undefined;
 }
+

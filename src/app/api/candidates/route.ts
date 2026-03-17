@@ -1,44 +1,47 @@
-import { NextResponse } from 'next/server';
-import pg from 'pg';
-import { Candidate, CandidateStatus } from '@/lib/types';
 
-const { Pool } = pg;
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { CandidateStatus } from "@/lib/types";
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
+export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const roleId = searchParams.get('roleId');
-
-  if (!roleId) {
-    return NextResponse.json({ error: 'roleId is required' }, { status: 400 });
-  }
-
+export async function GET(request: NextRequest) {
   try {
-    const res = await pool.query('SELECT * FROM "Candidate" WHERE role_id = $1', [roleId]);
+    const { searchParams } = new URL(request.url);
+    const roleId = searchParams.get("roleId");
 
-    const mappedCandidates: Candidate[] = res.rows.map((r) => {
-      const profileData = r.profile_data || {};
-      return {
-        id: r.id,
-        roleId: r.role_id,
-        name: r.name,
-        status: (r.stage || 'Applied') as CandidateStatus,
-        resume_score: profileData.resume_score || null,
-        resume_summary: profileData.summary || null,
-        profile_data: {
-          experience: profileData.experience || [],
-          education: profileData.education || [],
-        },
-      };
+    if (!roleId) {
+      console.warn("[GET /api/candidates] Missing roleId in query");
+      return NextResponse.json({ error: "roleId is required" }, { status: 400 });
+    }
+
+    console.log(`[GET /api/candidates] Fetching for role: ${roleId}`);
+
+    const candidates = await prisma.candidate.findMany({
+      where: { role_id: roleId },
+      orderBy: { created_at: "desc" },
     });
 
-    return NextResponse.json(mappedCandidates);
+    console.log(`[GET /api/candidates] Found ${candidates.length} candidates`);
+
+    const mapped = candidates.map((c: any) => ({
+      id: c.id,
+      roleId: c.role_id,
+      name: c.name || "Unknown Candidate",
+      status: (c.stage || "Applied") as CandidateStatus,
+      resume_score: c.resume_score,
+      resume_review_data: c.resume_review_data,
+      raw_resume_text: c.raw_resume_text,
+      profile_data: c.profile_data || {},
+      created_at: c.created_at,
+    }));
+
+    return NextResponse.json(mapped);
   } catch (error: any) {
-    console.error('Error fetching candidates via pg:', error);
-    return NextResponse.json({ error: 'Internal Server Error', message: error.message }, { status: 500 });
+    console.error("[GET /api/candidates] Fatal Error:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error", message: error.message },
+      { status: 500 }
+    );
   }
 }

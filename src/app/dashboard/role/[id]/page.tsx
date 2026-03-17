@@ -1,15 +1,11 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
+import { Trash2, Users, Search, FileText, Loader2, ChevronLeft, ArrowUpRight, ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 import { Role, Candidate } from "@/lib/types";
 import { CandidateTable } from "@/components/dashboard/CandidateTable";
 import { Badge } from "@/components/ui/badge";
-import { 
-  ArrowLeft, 
-  Users, 
-  FileText,
-  Loader2
-} from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,33 +27,67 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        // Fetch role info (we can get this from the roles list or a single role API)
-        // For simplicity, we'll fetch all roles and find the one. 
-        // In a real app, you'd have /api/roles/[id]
-        const rolesRes = await fetch("/api/roles");
-        const roles: Role[] = await rolesRes.json();
-        const foundRole = roles.find(r => r.id === id);
-        
-        if (!foundRole) throw new Error("Role not found");
-        setRole(foundRole);
+  const [uploading, setUploading] = useState(false);
+  const [openUpload, setOpenUpload] = useState(false);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
-        // Fetch candidates
-        const candRes = await fetch(`/api/candidates?roleId=${id}`);
-        if (!candRes.ok) throw new Error("Failed to fetch candidates");
-        const candData = await candRes.json();
-        setCandidates(candData);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setLoading(false);
-      }
+  async function fetchData() {
+    try {
+      setLoading(true);
+      const rolesRes = await fetch("/api/roles");
+      const roles: Role[] = await rolesRes.json();
+      const foundRole = roles.find(r => r.id === id);
+      
+      if (!foundRole) throw new Error("Role not found");
+      setRole(foundRole);
+
+      // Fetch candidates
+      const candRes = await fetch(`/api/candidates?roleId=${id}`);
+      if (!candRes.ok) throw new Error("Failed to fetch candidates");
+      const candData = await candRes.json();
+      setCandidates(candData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setLoading(false);
     }
+  }
 
+  useEffect(() => {
     fetchData();
   }, [id]);
+
+  const handleUploadResume = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resumeFile) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", resumeFile);
+    formData.append("roleId", id);
+
+    try {
+      const res = await fetch("/api/candidates/upload-v2", {
+        method: "POST",
+        body: formData,
+      });
+      const d = await res.json();
+      setResumeFile(null);
+      setOpenUpload(false);
+      await fetchData(); // reload candidates
+      toast.success("Candidate Uploaded Successfully", {
+        description: `Analysis complete. Score: ${Math.round(d.score || 0)}%`,
+      });
+    } catch (err: any) {
+      console.error("[Upload] Error:", err);
+      toast.error("Upload Failed", {
+        description: err.message || "An unexpected error occurred.",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -114,12 +144,25 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
+            <div className="relative group">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+              <input 
+                type="text" 
+                placeholder="Search candidates..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-4 py-2 w-64 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
+              />
+            </div>
+
             <Dialog>
-              <DialogTrigger render={<Button variant="outline" className="text-indigo-600 border-indigo-200 hover:bg-indigo-50" />}>
-                <FileText className="w-4 h-4 mr-2" />
-                View Job Description
-              </DialogTrigger>
+              <DialogTrigger render={
+                <Button variant="outline" className="text-indigo-600 border-indigo-200 hover:bg-indigo-50">
+                  <FileText className="w-4 h-4 mr-2" />
+                  View Job Description
+                </Button>
+              } />
               <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col overflow-hidden bg-slate-50 p-0 border-slate-200">
                 <DialogHeader className="px-6 py-4 bg-white border-b border-slate-200">
                   <DialogTitle className="text-xl font-bold text-slate-800">
@@ -141,10 +184,42 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-bold text-slate-800">Candidate Pipeline</h2>
+          <Dialog open={openUpload} onOpenChange={setOpenUpload}>
+            <DialogTrigger render={
+              <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm h-9">
+                <Users className="w-4 h-4 mr-2" />
+                Add Candidate
+              </Button>
+            } />
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Upload Resume (.pdf or .docx)</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleUploadResume} className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Resume File</label>
+                  <input 
+                    type="file" 
+                    accept=".pdf,.docx,.doc" 
+                    onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
+                    required
+                    className="w-full text-sm border p-2 rounded-md"
+                  />
+                </div>
+                <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700" disabled={!resumeFile || uploading}>
+                  {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  {uploading ? "Parsing Resume..." : "Upload & Parse"}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
         
         {candidates.length > 0 ? (
-          <CandidateTable candidates={candidates} />
+          <CandidateTable 
+            candidates={candidates.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))} 
+            onDeleted={fetchData} 
+          />
         ) : (
           <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-dashed border-slate-300">
             <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mb-4">

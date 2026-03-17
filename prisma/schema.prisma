@@ -1,12 +1,10 @@
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
   provider   = "postgresql"
-  // url        = env("DATABASE_URL")
-  extensions = [vector]
+  url        = env("DATABASE_URL")
 }
 
 model Role {
@@ -42,21 +40,24 @@ model Rubric {
 }
 
 model Candidate {
-  id           String      @id @default(cuid())
-  name         String
-  email        String      @unique
-  resume_url   String?
-  role_id      String
-  role         Role        @relation(fields: [role_id], references: [id])
-  stage        String
-  profile_data Json?
+  id                 String      @id @default(cuid())
+  name               String
+  email              String      @unique
+  resume_url         String?
+  role_id            String
+  role               Role        @relation(fields: [role_id], references: [id])
+  stage              String
+  resume_score       Float?
+  resume_review_data Json?
+  raw_resume_text    String?
+  profile_data       Json?
   content_embedding Unsupported("vector(3072)")?
-  created_at        DateTime    @default(now())
-  status_updated_at DateTime    @default(now())
-  interviews        Interview[]
-  transcripts       InterviewTranscript[]
-  interview_guides  InterviewGuide[]
-  interview_rounds  InterviewRound[]
+  created_at         DateTime    @default(now())
+  status_updated_at  DateTime    @default(now())
+  interviews         Interview[]
+  transcripts        InterviewTranscript[]
+  interview_guides   InterviewGuide[]
+  interview_rounds   InterviewRound[]
 }
 
 

@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "src/app/api/candidates/upload/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/candidates/upload-v2/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/candidates/[id]/refresh-score/route.ts": {
+      "maxDuration": 60
+    }
+  }
+}

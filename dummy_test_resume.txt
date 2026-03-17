@@ -1,0 +1,8 @@
+
+JOHN DOE
+john.doe.test@example.com
+Full Stack Engineer with 5 years of experience in React, Node.js, and PostgreSQL.
+Worked at TechCorp for 3 years building scalable microservices.
+Delivered 20% improvement in load times.
+Education: BS in Computer Science from Stanford.
+Skills: TypeScript, AWS, Docker, Kubernetes.

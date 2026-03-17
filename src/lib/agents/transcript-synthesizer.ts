@@ -133,3 +133,4 @@ Return ONLY valid JSON matching this exact structure:
   }
   throw new Error("[TranscriptSynthesizer] Max retries exceeded.");
 }
+

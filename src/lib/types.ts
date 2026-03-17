@@ -26,6 +26,7 @@ export interface Education {
 }
 
 export interface CandidateProfile {
+  summary?: string;
   experience: Experience[];
   education: Education[];
 }
@@ -36,6 +37,9 @@ export interface Candidate {
   name: string;
   status: CandidateStatus;
   resume_score: number | null;
-  resume_summary: string | null;
-  profile_data: CandidateProfile;
+  resume_summary?: string | null;
+  resume_review_data?: any | null;
+  raw_resume_text?: string | null;
+  profile_data: CandidateProfile & { raw_text?: string };
 }
+

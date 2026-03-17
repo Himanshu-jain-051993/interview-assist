@@ -11,12 +11,12 @@ import {
   BreadcrumbPage, 
   BreadcrumbSeparator 
 } from "@/components/ui/breadcrumb";
-import { LayoutDashboard, Users, Settings, Bell, Search, Menu, ChevronLeft, ChevronRight } from "lucide-react";
+import { LayoutDashboard, Users, Settings, Bell, Search, Menu, ChevronLeft, ChevronRight, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const pathSegments = pathname.split('/').filter(Boolean);
 
   return (
@@ -29,12 +29,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       >
         <div className={`p-6 border-b border-slate-100 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
           <Link href="/dashboard" className="flex items-center gap-2 group overflow-hidden">
-            <div className="w-8 h-8 shrink-0 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold group-hover:scale-110 transition-transform">
-              IA
+            <div className="w-8 h-8 shrink-0 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold group-hover:scale-110 transition-transform shadow-lg shadow-indigo-100">
+              <Zap className="w-5 h-5 fill-white" />
             </div>
             {!isCollapsed && (
-              <span className="text-lg font-bold tracking-tight text-slate-800 truncate animate-in fade-in duration-300">
-                Interview Assist
+              <span className="text-lg font-black tracking-tight text-slate-900 truncate animate-in fade-in duration-300">
+                Recruit<span className="text-indigo-600">Assist</span>
               </span>
             )}
           </Link>

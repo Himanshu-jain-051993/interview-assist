@@ -25,14 +25,26 @@ export async function GET(req: NextRequest) {
 import mammoth from "mammoth";
 // Fix for DOMMatrix undefined error in pdf-parse on Next.js Serverless
 if (typeof global.DOMMatrix === 'undefined') {
-  (global as any).DOMMatrix = class DOMMatrix {};
+  (global as any).DOMMatrix = function() {};
 }
 if (typeof global.Path2D === 'undefined') {
-  (global as any).Path2D = class Path2D {};
+  (global as any).Path2D = function() {};
 }
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse = require("pdf-parse");
+const pdf = require("pdf-parse");
+
+async function safePdfParse(buffer: Buffer): Promise<{ text: string }> {
+  if (typeof pdf === 'function') return pdf(buffer);
+  if (pdf.PDFParse) {
+    const instance = new pdf.PDFParse({ data: buffer });
+    const data = await instance.getText();
+    await instance.destroy();
+    return data || { text: "" };
+  }
+  if (pdf.default) return pdf.default(buffer);
+  throw new Error("pdf-parse library error: No valid parsing function found.");
+}
 
 export const runtime = "nodejs";
 
@@ -46,7 +58,7 @@ async function extractTextFromFile(file: File | null): Promise<string> {
     const result = await mammoth.extractRawText({ buffer });
     return result.value || "";
   } else if (fileName.endsWith(".pdf")) {
-    const result = await pdfParse(buffer);
+    const result = await safePdfParse(buffer);
     return result.text || "";
   } else if (fileName.endsWith(".txt")) {
     return buffer.toString("utf-8");
@@ -138,3 +150,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+

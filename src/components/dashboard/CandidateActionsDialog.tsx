@@ -1,16 +1,15 @@
+
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -19,24 +18,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Candidate, CandidateStatus } from "@/lib/types";
 import {
-  User,
-  Briefcase,
-  BookOpen,
-  Quote,
-  CheckCircle2,
-  TrendingUp,
-  TrendingDown,
   Plus,
   Loader2,
-  ChevronDown,
-  ChevronUp,
   Clock,
-  Target,
   Gauge,
   FileText,
+  Zap,
+  Calendar,
+  User,
+  MoreVertical,
+  RefreshCw,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,13 +43,6 @@ const STAGE_OPTIONS: CandidateStatus[] = [
   "Shortlisted",
   "Interview Scheduled",
   "Rejected",
-];
-
-const ROUND_TYPES = [
-  { value: "Screening",    label: "Screening" },
-  { value: "Technical_1",  label: "Technical Round 1" },
-  { value: "Technical_2",  label: "Technical Round 2" },
-  { value: "Culture_Fit",  label: "Culture Fit" },
 ];
 
 const STAGE_COLORS: Record<CandidateStatus, string> = {
@@ -96,21 +84,21 @@ interface CandidateActionsDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onStatusChange: (id: string, status: CandidateStatus) => void;
+  onCandidateUpdate: (c: Candidate) => void;
   onOpenGuide: (c: Candidate) => void;
 }
 
-// ── Circular Score Gauge ────────────────────────────────────────────────────
+// ── Sub-Components ──────────────────────────────────────────────────────────
 
 function ScoreGauge({ value, label }: { value: number; label: string }) {
   const r = 28;
   const circ = 2 * Math.PI * r;
   const offset = circ - (value / 10) * circ;
-  const color =
-    value >= 8 ? "#10b981" : value >= 6 ? "#f59e0b" : "#f43f5e";
+  const color = value >= 8 ? "#10b981" : value >= 6 ? "#f59e0b" : "#f43f5e";
 
   return (
     <div className="flex flex-col items-center gap-1">
-      <svg width="72" height="72" viewBox="0 0 72 72">
+      <svg width="60" height="60" viewBox="0 0 72 72">
         <circle cx="36" cy="36" r={r} fill="none" stroke="#e2e8f0" strokeWidth="6" />
         <circle
           cx="36" cy="36" r={r}
@@ -121,436 +109,183 @@ function ScoreGauge({ value, label }: { value: number; label: string }) {
           strokeDashoffset={offset}
           strokeLinecap="round"
           transform="rotate(-90 36 36)"
-          style={{ transition: "stroke-dashoffset 0.6s ease" }}
         />
-        <text x="36" y="40" textAnchor="middle" fontSize="14" fontWeight="700" fill={color}>
-          {value.toFixed(1)}
+        <text x="36" y="42" textAnchor="middle" fontSize="16" fontWeight="800" fill={color}>
+          {Math.round(value)}
         </text>
       </svg>
-      <span className="text-[10px] text-slate-500 font-medium text-center leading-tight">{label}</span>
+      <span className="text-[10px] text-slate-500 font-bold uppercase">{label}</span>
     </div>
   );
 }
 
-// ── Round Card (expandable) ────────────────────────────────────────────────
-
-function RoundCard({ round, index, candidateId, roleId, onUpdate }: { round: InterviewRound; index: number; candidateId: string; roleId: string; onUpdate: (r: InterviewRound) => void }) {
-  const [expanded, setExpanded] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [transcriptFile, setTranscriptFile] = useState<File | null>(null);
-  const [notesFile, setNotesFile] = useState<File | null>(null);
-  const transcriptRef = useRef<HTMLInputElement>(null);
-  const notesRef = useRef<HTMLInputElement>(null);
-  const fb = round.ai_feedback_json;
-  const score = round.cumulative_score;
-  const color = ROUND_COLOR[round.round_type] ?? "bg-slate-100 text-slate-700 border-slate-200";
-
-  return (
-    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm transition-all">
-      {/* Header row */}
-      <button
-        onClick={() => setExpanded((e) => !e)}
-        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50/50 transition-colors focus:outline-none"
-      >
-        {/* Timeline indicator */}
-        <div className="shrink-0 flex flex-col items-center">
-          <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600">
-            {index + 1}
-          </div>
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant="outline" className={`text-[10px] font-semibold ${color} border`}>
-              {ROUND_LABEL[round.round_type] ?? round.round_type}
-            </Badge>
-            <span className="text-[10px] text-slate-400 font-medium">
-              {new Date(round.interview_date || round.created_at).toLocaleDateString("en-GB", {
-                day: "numeric", month: "short", year: "numeric",
-              })}
-            </span>
-          </div>
-          {fb?.evaluationSummary && (
-            <p className="text-xs text-slate-600 mt-1 leading-relaxed truncate">
-              {fb.evaluationSummary}
-            </p>
-          )}
-        </div>
-
-        {/* Score badge */}
-        {score !== null && score !== undefined && (
-          <div className="shrink-0 text-right">
-            <span
-              className={`text-sm font-bold tabular-nums ${
-                score >= 8 ? "text-emerald-600" : score >= 6 ? "text-amber-600" : "text-rose-600"
-              }`}
-            >
-              {score.toFixed(1)}<span className="text-slate-400 font-normal text-xs">/10</span>
-            </span>
-          </div>
-        )}
-
-        <div className="shrink-0 text-slate-400">
-          {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </div>
-      </button>
-
-      {/* Expanded detail */}
-      {expanded && (
-        <div className="border-t border-slate-100 px-4 py-4 space-y-5 bg-slate-50/30">
-          
-          <div className="bg-white border border-dashed border-slate-300 rounded-xl p-4 shadow-sm space-y-3 mb-4">
-              <p className="text-xs font-semibold text-slate-700">
-                {fb ? "Update / Refresh Feedback" : "Add Feedback / Transcripts"}
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <div 
-                  onClick={() => transcriptRef.current?.click()}
-                  className="border border-slate-200 rounded-lg p-3 text-center cursor-pointer hover:bg-slate-50 text-xs"
-                >
-                  {transcriptFile ? <span className="font-semibold text-indigo-600">{transcriptFile.name}</span> : <span className="text-slate-500">Attach Transcript</span>}
-                </div>
-                <div 
-                  onClick={() => notesRef.current?.click()}
-                  className="border border-slate-200 rounded-lg p-3 text-center cursor-pointer hover:bg-slate-50 text-xs"
-                >
-                  {notesFile ? <span className="font-semibold text-indigo-600">{notesFile.name}</span> : <span className="text-slate-500">Attach Notes</span>}
-                </div>
-              </div>
-              <input type="file" ref={transcriptRef} className="hidden" accept=".pdf,.docx,.txt" onChange={e => setTranscriptFile(e.target.files?.[0] || null)} />
-              <input type="file" ref={notesRef} className="hidden" accept=".pdf,.docx,.txt" onChange={e => setNotesFile(e.target.files?.[0] || null)} />
-              <Button 
-                onClick={async () => {
-                  setIsRefreshing(true);
-                  try {
-                    const fd = new FormData();
-                    fd.append("candidateId", candidateId);
-                    fd.append("roleId", roleId);
-                    fd.append("roundType", round.round_type);
-                    if (transcriptFile) fd.append("transcriptFile", transcriptFile);
-                    if (notesFile) fd.append("notesFile", notesFile);
-                    const res = await fetch(`/api/interview-rounds/${round.id}/refresh`, { method: "POST", body: fd });
-                    if (!res.ok) throw new Error("Failed to evaluate");
-                    const data = await res.json();
-                    onUpdate(data.round);
-                    toast.success("Feedback Generated!");
-                  } catch(e: any) {
-                    toast.error(e.message);
-                  } finally {
-                    setIsRefreshing(false);
-                  }
-                }}
-                disabled={isRefreshing || (!transcriptFile && !notesFile)}
-                className="w-full text-xs h-8 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
-              >
-                {isRefreshing ? "Evaluating..." : fb ? "Refresh AI Feedback" : "Generate AI Feedback"}
-              </Button>
-            </div>
-
-          {fb && fb.rubricEvaluations && (
-            <>
-              {/* Scores row */}
-          <div className="flex items-center justify-around flex-wrap bg-white rounded-lg p-3 border border-slate-200">
-            {fb.roundScore && <ScoreGauge value={fb.roundScore} label="Round Score" />}
-            {fb.cumulativeScore && <ScoreGauge value={fb.cumulativeScore} label="Cumulative" />}
-            {fb.hiringConfidenceIndex !== undefined && (
-              <div className="flex flex-col items-center gap-1">
-                <div className="relative w-16 h-16 flex items-center justify-center">
-                  <Gauge className="w-10 h-10 text-slate-300" />
-                  <span className="absolute text-xs font-bold text-slate-700">
-                    {fb.hiringConfidenceIndex}%
-                  </span>
-                </div>
-                <span className="text-[10px] text-slate-500 font-medium">Confidence</span>
-              </div>
-            )}
-          </div>
-
-          {/* Narrative */}
-          {fb.hiringThesis && (
-            <p className="text-sm text-slate-600 leading-relaxed border-l-2 border-indigo-200 pl-3 italic">
-              "{fb.hiringThesis}"
-            </p>
-          )}
-          
-          {/* Skew Alert */}
-          {fb.skewAlert && (
-            <div className="bg-rose-50 border border-rose-200 rounded p-3 text-sm text-rose-700 flex gap-2">
-              <span className="font-bold">⚠️ Skew Alert:</span> 
-              <span>{fb.skewAlert}</span>
-            </div>
-          )}
-
-          {/* Recommended next step */}
-          {fb.recommendedNextStep && (
-            <div className="flex items-center gap-2">
-              <Target className="w-4 h-4 text-indigo-500 shrink-0" />
-              <span className="text-xs font-bold text-indigo-700 uppercase tracking-wider">
-                Recommendation:
-              </span>
-              <span className="text-sm font-medium text-slate-800">{fb.recommendedNextStep}</span>
-            </div>
-          )}
-
-          {/* Strengths/Gaps */}
-          <div className="grid grid-cols-2 gap-4">
-            {fb.keyStrengths?.length > 0 && (
-              <div className="space-y-2">
-                <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1">
-                  <TrendingUp className="w-3 h-3" /> Strengths
-                </span>
-                {fb.keyStrengths.map((s: string, i: number) => (
-                  <div key={i} className="flex items-start gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />
-                    <p className="text-xs text-slate-600">{s}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-            {fb.keyGaps?.length > 0 && (
-              <div className="space-y-2">
-                <span className="text-[10px] font-bold text-rose-500 uppercase tracking-wider flex items-center gap-1">
-                  <TrendingDown className="w-3 h-3" /> Gaps
-                </span>
-                {fb.keyGaps.map((g: string, i: number) => (
-                  <div key={i} className="flex items-start gap-1.5">
-                    <span className="text-rose-400 font-black text-sm shrink-0 leading-none">!</span>
-                    <p className="text-xs text-slate-600">{g}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Rubric evaluations */}
-          {fb.rubricEvaluations?.length > 0 && (
-            <div className="space-y-2 pt-2">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                Rubric Breakdown
-              </span>
-              <div className="space-y-2">
-                {fb.rubricEvaluations.map((re: any, i: number) => (
-                  <div key={i} className="bg-white border border-slate-200 rounded-lg px-4 py-3 space-y-1.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-bold text-slate-800">{re.parameter}</span>
-                      <div className="flex items-center gap-2">
-                        {re.grade && (
-                          <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200">
-                            <span className="text-[10px] font-bold text-slate-700 uppercase tracking-widest">{re.grade}</span>
-                            <div className="flex gap-0.5">
-                              {["Poor", "Borderline", "Good", "Strong"].map((level, lvlIdx) => {
-                                const activeIdx = ["Poor", "Borderline", "Good", "Strong"].indexOf(re.grade);
-                                const isActive = lvlIdx <= activeIdx;
-                                const barColor = 
-                                  re.grade === "Poor" ? "bg-rose-500" :
-                                  re.grade === "Borderline" ? "bg-amber-400" :
-                                  "bg-emerald-500";
-                                return (
-                                  <div key={level} className={`h-2.5 w-6 rounded-sm ${isActive ? barColor : "bg-slate-200"}`} />
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    {re.aiEvidence && (
-                      <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-2 rounded">
-                        <strong>AI Evidence:</strong> {re.aiEvidence}
-                      </p>
-                    )}
-                    {re.interviewerInfluence && (
-                      <div className="flex items-start gap-1.5 text-[10px] text-amber-700 bg-amber-50 p-1.5 rounded border border-amber-100 mt-1">
-                        <span className="shrink-0 text-amber-500 font-bold">⚖</span>
-                        <p><strong>Human Influence:</strong> {re.interviewerInfluence}</p>
-                      </div>
-                    )}
-                    {re.conflictAudit && (
-                       <div className="flex items-start gap-1.5 text-[10px] text-rose-700 bg-rose-50 p-1.5 rounded border border-rose-100 mt-1">
-                         <span className="shrink-0 text-rose-500 font-bold">⚠️</span>
-                         <p><strong>Conflict Audit:</strong> {re.conflictAudit}</p>
-                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-            </>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Add New Round Form ─────────────────────────────────────────────────────
-
-function AddRoundForm({
+function ScheduleRoundForm({
   candidateId,
   roleId,
   onSuccess,
-  onCancel,
 }: {
   candidateId: string;
   roleId: string;
   onSuccess: (round: InterviewRound) => void;
-  onCancel: () => void;
 }) {
-  const [roundType, setRoundType] = useState("");
+  const [roundType, setRoundType] = useState("Screening");
   const [interviewDate, setInterviewDate] = useState("");
-  const [transcriptFile, setTranscriptFile] = useState<File | null>(null);
-  const [notesFile, setNotesFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const transcriptRef = useRef<HTMLInputElement>(null);
-  const notesRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = async () => {
-    if (!roundType) { toast.error("Please select a round type"); return; }
-    if (!interviewDate) { toast.error("Please set an interview date"); return; }
-
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsSubmitting(true);
-    try {
-      const formData = new FormData();
-      formData.append("candidateId", candidateId);
-      formData.append("roleId", roleId);
-      formData.append("roundType", roundType);
-      formData.append("interviewDate", new Date(interviewDate).toISOString());
-      if (transcriptFile) formData.append("transcriptFile", transcriptFile);
-      if (notesFile) formData.append("notesFile", notesFile);
 
+    const formData = new FormData();
+    formData.append("candidateId", candidateId);
+    formData.append("roleId", roleId);
+    formData.append("roundType", roundType);
+    if (interviewDate) formData.append("interviewDate", interviewDate);
+
+    try {
       const res = await fetch("/api/interview-rounds", {
         method: "POST",
         body: formData,
       });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.details || err.error || "Failed");
-      }
       const data = await res.json();
-      if (!transcriptFile && !notesFile) {
-        toast.success("Planned round added");
-      } else {
-        toast.success("Evaluation complete", { description: `Cumulative score: ${data.round.cumulativeScore?.toFixed(1) ?? "N/A"}/10` });
-      }
+      if (!res.ok) throw new Error(data.error || "Failed to schedule interview");
+      toast.success("Interview scheduled successfully");
       onSuccess(data.round);
+      setInterviewDate("");
     } catch (err: any) {
-      toast.error("Evaluation failed", { description: err.message });
+      toast.error(err.message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="bg-white border border-indigo-200 rounded-xl p-5 space-y-4 shadow-sm w-full">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-bold text-slate-800">New Interview Round</span>
-        <Button variant="ghost" size="sm" onClick={onCancel} className="text-xs text-slate-500 h-7 px-3 hover:bg-slate-100">Cancel</Button>
+    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+      <div className="flex items-center gap-3">
+        <Calendar className="w-5 h-5 text-indigo-600" />
+        <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">Schedule New Interview</h3>
       </div>
-
-      <div className="flex gap-4">
-        {/* Round type */}
-        <div className="space-y-1.5 flex-1">
-          <label className="text-xs font-semibold text-slate-700">Round Type</label>
-          <Select value={roundType} onValueChange={(val) => setRoundType(val ?? "")}>
-            <SelectTrigger className="h-9 text-sm border-slate-200">
-              <SelectValue placeholder="Select round…" />
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1">
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Round Type</label>
+          <Select value={roundType} onValueChange={(v: any) => v && setRoundType(v)}>
+            <SelectTrigger className="h-10 text-xs font-bold bg-slate-50 border-slate-200 w-full">
+              <SelectValue />
             </SelectTrigger>
-            <SelectContent>
-              {ROUND_TYPES.map((r) => (
-                <SelectItem key={r.value} value={r.value} className="text-sm">{r.label}</SelectItem>
+            <SelectContent className="bg-white border-slate-200">
+              {Object.keys(ROUND_LABEL).map((k) => (
+                <SelectItem key={k} value={k} className="text-xs font-semibold">{ROUND_LABEL[k]}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-        
-        {/* Interview Date */}
-        <div className="space-y-1.5 flex-1">
-          <label className="text-xs font-semibold text-slate-700">Interview Date</label>
-          <input 
-            type="date" 
-            value={interviewDate} 
-            onChange={e => setInterviewDate(e.target.value)} 
-            className="w-full h-9 px-3 py-1 text-sm border border-slate-200 bg-transparent rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        <div className="space-y-1">
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Interview Date</label>
+          <Input
+            type="date"
+            className="h-10 text-xs font-bold bg-slate-50 border-slate-200"
+            value={interviewDate}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInterviewDate(e.target.value)}
           />
         </div>
       </div>
-
-      {/* Interviewer notes */}
-      <div className="space-y-1.5 flex flex-col">
-        <label className="text-xs font-semibold text-slate-700">
-          Interviewer Notes <span className="text-slate-400 font-normal ml-1">(weighted at 70%)</span>
-        </label>
-        <div 
-          onClick={() => notesRef.current?.click()}
-          className="border border-dashed border-slate-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 hover:border-indigo-300 transition-colors"
-        >
-          {notesFile ? <p className="text-sm font-medium text-indigo-700">{notesFile.name}</p> : <p className="text-sm text-slate-500">Upload .pdf or .docx file</p>}
-        </div>
-        <input type="file" ref={notesRef} className="hidden" accept=".pdf,.docx,.txt" onChange={(e) => setNotesFile(e.target.files?.[0] || null)} />
-      </div>
-
-      {/* Transcript */}
-      <div className="space-y-1.5 flex flex-col">
-        <label className="text-xs font-semibold text-slate-700">
-          Interview Transcript <span className="text-slate-400 font-normal ml-1">(optional)</span>
-        </label>
-        <div 
-          onClick={() => transcriptRef.current?.click()}
-          className="border border-dashed border-slate-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 hover:border-indigo-300 transition-colors"
-        >
-          {transcriptFile ? <p className="text-sm font-medium text-indigo-700">{transcriptFile.name}</p> : <p className="text-sm text-slate-500">Upload .pdf or .docx file</p>}
-        </div>
-        <input type="file" ref={transcriptRef} className="hidden" accept=".pdf,.docx,.txt" onChange={(e) => setTranscriptFile(e.target.files?.[0] || null)} />
-      </div>
-
       <Button
         onClick={handleSubmit}
-        disabled={isSubmitting || !roundType || !interviewDate}
-        className="w-full h-10 text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white mt-2"
+        disabled={isSubmitting}
+        className="w-full bg-slate-900 text-white font-black h-11 uppercase text-[10px] tracking-widest hover:bg-slate-800 transition-all shadow-md"
       >
-        {isSubmitting ? (
-          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving…</>
-        ) : (!transcriptFile && !notesFile) ? (
-          <><Clock className="w-4 h-4 mr-2" /> Schedule Empty Round</>
-        ) : (
-          <><FileText className="w-4 h-4 mr-2" /> Generate Cumulative Feedback</>
-        )}
+        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Schedule Interview"}
       </Button>
     </div>
   );
 }
 
-// ── Main Dialog ────────────────────────────────────────────────────────────
+// ── Main Component ──────────────────────────────────────────────────────────
 
 export function CandidateActionsDialog({
-  candidate,
+  candidate: initialCandidate,
   currentStatus,
   isOpen,
   onClose,
   onStatusChange,
+  onCandidateUpdate,
   onOpenGuide,
 }: CandidateActionsDialogProps) {
+  const [candidate, setCandidate] = useState<Candidate | null>(initialCandidate);
   const [status, setStatus] = useState<CandidateStatus>(currentStatus);
   const [rounds, setRounds] = useState<InterviewRound[]>([]);
-  const [loadingRounds, setLoadingRounds] = useState(false);
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [guideData, setGuideData] = useState<any>(null);
+  const [isLoadingGuide, setIsLoadingGuide] = useState(false);
+  const [isRefreshingGuide, setIsRefreshingGuide] = useState(false);
+  const [isLoadingRounds, setIsLoadingRounds] = useState(false);
+  const [isAnalyzingResume, setIsAnalyzingResume] = useState(false);
+  const [analyzingRoundId, setAnalyzingRoundId] = useState<string | null>(null);
 
-  // Sync status when candidate changes
-  useEffect(() => { setStatus(currentStatus); }, [currentStatus]);
+  useEffect(() => { 
+    setCandidate(initialCandidate);
+    setStatus(currentStatus); 
+  }, [initialCandidate, currentStatus]);
 
-  // Fetch rounds when dialog opens
+  const fetchRounds = async () => {
+    if (!candidate) return;
+    setIsLoadingRounds(true);
+    try {
+      const res = await fetch(`/api/interview-rounds?candidateId=${candidate.id}`);
+      const data = await res.json();
+      setRounds(data.rounds ?? []);
+    } catch (err) {
+      console.error("[ActionsDialog] Rounds fetch error:", err);
+    } finally {
+      setIsLoadingRounds(false);
+    }
+  };
+
+  const fetchGuide = async (refresh = false) => {
+    if (!candidate) return;
+    if (refresh) setIsRefreshingGuide(true);
+    else setIsLoadingGuide(true);
+    
+    try {
+      const res = await fetch("/api/generate-guide", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ candidateId: candidate.id, roleId: candidate.roleId, force: refresh }),
+      });
+      const data = await res.json();
+      setGuideData(data);
+    } catch (err) {
+      console.error("[ActionsDialog] Guide fetch error:", err);
+    } finally {
+      setIsLoadingGuide(false);
+      setIsRefreshingGuide(false);
+    }
+  };
+
+  const handleRefreshResumeAnalyzer = async () => {
+    if (!candidate) return;
+    setIsAnalyzingResume(true);
+    try {
+      const res = await fetch(`/api/candidates/${candidate.id}/analyze`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Analysis failed");
+      toast.success("Resume analyzer refreshed successfully");
+      setCandidate(data.candidate);
+      onCandidateUpdate(data.candidate);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setIsAnalyzingResume(false);
+    }
+  };
+
   useEffect(() => {
-    if (!isOpen || !candidate) return;
-    setLoadingRounds(true);
-    fetch(`/api/interview-rounds?candidateId=${candidate.id}`)
-      .then((r) => r.json())
-      .then((d) => setRounds(d.rounds ?? []))
-      .catch((err) => console.error("Error fetching rounds:", err))
-      .finally(() => setLoadingRounds(false));
-  }, [isOpen, candidate]);
+    if (isOpen && candidate) {
+      fetchRounds();
+      fetchGuide();
+    }
+  }, [isOpen, candidate?.id]);
 
-  const handleStatusChange = useCallback(async (newStatus: CandidateStatus) => {
+  const handleStatusChange = async (newStatus: CandidateStatus) => {
     if (!candidate) return;
     const prev = status;
     setStatus(newStatus);
@@ -562,231 +297,304 @@ export function CandidateActionsDialog({
       });
       if (!res.ok) throw new Error("Update failed");
       onStatusChange(candidate.id, newStatus);
-      toast.success("Stage updated", { description: `${candidate.name} → ${newStatus}` });
+      toast.success(`Candidate moved to ${newStatus}`);
     } catch {
       setStatus(prev);
-      toast.error("Could not update stage. Please try again.");
+      toast.error("Failed to update status");
     }
-  }, [candidate, status, onStatusChange]);
+  };
 
-  const handleRoundAdded = (round: InterviewRound) => {
-    setRounds((prev) => [...prev, round]);
-    setShowAddForm(false);
+  const handleGenerateInterviewAnalysis = async (roundId: string) => {
+    const transcriptInput = document.createElement("input");
+    transcriptInput.type = "file";
+    transcriptInput.accept = ".pdf,.docx,.txt";
+    
+    transcriptInput.onchange = async (e: any) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      setAnalyzingRoundId(roundId);
+      const formData = new FormData();
+      formData.append("transcriptFile", file);
+
+      try {
+        const res = await fetch(`/api/interview-rounds/${roundId}`, {
+          method: "PATCH",
+          body: formData,
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Analysis failed");
+        
+        toast.success("Interview analysis generated successfully");
+        setRounds(prev => prev.map(r => r.id === roundId ? data.round : r));
+      } catch (err: any) {
+        toast.error(err.message);
+      } finally {
+        setAnalyzingRoundId(null);
+      }
+    };
+    transcriptInput.click();
   };
 
   if (!candidate) return null;
 
-  const latestRound = rounds[rounds.length - 1];
-
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      if (!open) {
-        setShowAddForm(false);
-        onClose();
-      }
-    }}>
-      <DialogContent className="w-[95vw] max-w-[95vw] h-[90vh] flex flex-col gap-0 p-0 overflow-hidden rounded-xl shadow-2xl border border-slate-200 bg-slate-50">
-
-        {/* ── Header ───────────────────────────────────────────── */}
-        <DialogHeader className="shrink-0 px-6 pt-5 pb-4 border-b border-slate-200 bg-white">
-          <div className="flex items-start justify-between gap-6">
-            <div className="flex items-center gap-4 min-w-0">
-              <div className="min-w-0 space-y-1">
-                <DialogTitle className="text-xl font-bold text-slate-900 leading-snug truncate">
+    <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
+      <DialogContent className="max-w-4xl w-[90vw] p-0 overflow-hidden bg-white border-slate-200 shadow-2xl rounded-3xl">
+        <div className="flex flex-col h-[85vh]">
+          {/* Header */}
+          <div className="px-8 py-6 border-b border-slate-100 bg-white">
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <DialogTitle className="text-2xl font-black text-slate-900 leading-tight">
                   {candidate.name}
                 </DialogTitle>
                 <div className="flex items-center gap-3">
-                  <Badge className={`font-semibold text-[11px] py-0.5 px-2.5 ${STAGE_COLORS[currentStatus]}`}>
-                    {currentStatus}
+                  <Badge className={`font-bold text-[10px] uppercase tracking-wider py-1 px-3 ${STAGE_COLORS[status] || "bg-slate-100"}`}>
+                    {status}
                   </Badge>
                   {candidate.resume_score !== null && (
-                    <Badge variant="outline" className="text-[11px] border-slate-200 font-semibold text-slate-600">
-                      {candidate.resume_score}% Match
+                    <Badge variant="outline" className="text-[10px] border-slate-200 font-black text-indigo-600 bg-indigo-50/30 px-3">
+                      {Math.round(candidate.resume_score)}% AI Match
                     </Badge>
                   )}
                 </div>
               </div>
-            </div>
 
-            <div className="flex flex-col items-end gap-2 shrink-0">
-              {/* Stage selector */}
-              <div className="flex items-center gap-2">
-                <label className="text-xs font-medium text-slate-500">Move Stage:</label>
-                <Select value={status} onValueChange={(v) => handleStatusChange(v as CandidateStatus)}>
-                  <SelectTrigger className="h-8 text-xs border-slate-200 w-44 font-medium">
+              <div className="flex flex-col items-end gap-1.5">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pipeline Status</span>
+                <Select value={status} onValueChange={(v: any) => v && handleStatusChange(v)}>
+                  <SelectTrigger className="h-10 text-xs border-slate-200 w-48 font-bold bg-slate-50 hover:bg-white transition-colors">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    {STAGE_OPTIONS.map((s) => (
-                      <SelectItem key={s} value={s} className="text-xs">{s}</SelectItem>
-                    ))}
+                  <SelectContent className="bg-white border-slate-200">
+                    {STAGE_OPTIONS.map(s => <SelectItem key={s} value={s} className="text-xs font-semibold">{s}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* Interview Guide shortcut */}
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 text-xs font-semibold border-indigo-200 text-indigo-700 hover:bg-indigo-50 w-full"
-                onClick={() => { onClose(); onOpenGuide(candidate); }}
-              >
-                <FileText className="w-3.5 h-3.5 mr-1.5" /> Open Interview Guide
-              </Button>
             </div>
           </div>
-        </DialogHeader>
 
-        {/* ── Body ─────────────────────────────────────────────── */}
-        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-          <Tabs defaultValue="rounds" className="h-full flex flex-col">
-            {/* ── Tab Bar ── */}
-            <TabsList className="shrink-0 justify-start gap-8 rounded-none border-b border-slate-200 bg-white px-8 pb-0 h-12 pt-0 w-full">
-              <TabsTrigger value="rounds" className="relative -mb-px px-0 py-3 text-sm font-semibold rounded-none border-b-2 border-transparent text-slate-500 data-[state=active]:text-indigo-700 data-[state=active]:border-b-indigo-600 data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-colors h-full flex items-center gap-2">
-                Interview Rounds
-                <span className="inline-flex h-5 min-w-[1.25rem] px-1.5 items-center justify-center rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">
-                  {rounds.length}
-                </span>
-              </TabsTrigger>
-              <TabsTrigger value="profile" className="relative -mb-px px-0 py-3 text-sm font-semibold rounded-none border-b-2 border-transparent text-slate-500 data-[state=active]:text-indigo-700 data-[state=active]:border-b-indigo-600 data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-colors h-full">
-                Resume Profile
-              </TabsTrigger>
-            </TabsList>
+          {/* Content Area */}
+          <div className="flex-1 overflow-hidden">
+            <Tabs defaultValue="resume" className="h-full flex flex-col">
+              <TabsList className="shrink-0 flex justify-start gap-8 bg-white px-8 h-12 border-b border-slate-100">
+                <TabsTrigger value="resume" className="text-xs font-bold uppercase tracking-widest h-full px-0 border-b-2 border-transparent data-[state=active]:border-indigo-600 rounded-none shadow-none">Resume</TabsTrigger>
+                <TabsTrigger value="evaluation" className="text-xs font-bold uppercase tracking-widest h-full px-0 border-b-2 border-transparent data-[state=active]:border-indigo-600 rounded-none shadow-none text-nowrap">Resume Analyzer</TabsTrigger>
+                <TabsTrigger value="guide" className="text-xs font-bold uppercase tracking-widest h-full px-0 border-b-2 border-transparent data-[state=active]:border-indigo-600 rounded-none shadow-none text-nowrap">Interview Guide</TabsTrigger>
+                <TabsTrigger value="interviews" className="text-xs font-bold uppercase tracking-widest h-full px-0 border-b-2 border-transparent data-[state=active]:border-indigo-600 rounded-none shadow-none text-nowrap">Interview scheduling and feedback</TabsTrigger>
+              </TabsList>
 
-            {/* ── Interview Rounds Tab ─────────────────────────── */}
-            <TabsContent value="rounds" className="flex-1 min-h-0 overflow-y-auto mt-0 outline-none focus-visible:ring-0">
-              <div className="px-8 py-6 space-y-6 max-w-5xl mx-auto w-full">
-
-                {/* Header row + Add New Button */}
-                <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                  <div>
-                    <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-slate-400" /> Evaluation Timeline
-                    </h2>
-                    <p className="text-xs text-slate-500 mt-0.5">Sequential interview feedback driven by human notes & AI analysis.</p>
-                  </div>
-                  {!showAddForm && (
-                    <Button
-                      onClick={() => setShowAddForm(true)}
-                      className="h-9 px-4 text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
-                    >
-                      <Plus className="w-4 h-4 mr-1.5" /> Add New Round
-                    </Button>
-                  )}
-                </div>
-
-                {/* Add Round Form */}
-                {showAddForm && (
-                  <div className="animate-in fade-in slide-in-from-top-4 duration-300">
-                    <AddRoundForm
-                      candidateId={candidate.id}
-                      roleId={candidate.roleId}
-                      onSuccess={handleRoundAdded}
-                      onCancel={() => setShowAddForm(false)}
-                    />
-                  </div>
-                )}
-
-                {/* Rounds timeline */}
-                {loadingRounds ? (
-                  <div className="flex flex-col items-center justify-center py-20 text-slate-400 space-y-3">
-                    <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
-                    <span className="text-sm font-medium">Loading evaluation history…</span>
-                  </div>
-                ) : rounds.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-24 text-slate-400 gap-3 bg-white rounded-xl border border-slate-200 border-dashed">
-                    <FileText className="w-12 h-12 text-slate-200" />
-                    <p className="text-sm font-semibold text-slate-600">No interview rounds recorded</p>
-                    <p className="text-xs text-slate-500">Record the first interview to begin generating cumulative feedback.</p>
-                  </div>
-                ) : (
-                  <div className="relative pl-3 pt-2">
-                    {/* Connecting line */}
-                    <div className="absolute left-[24px] top-4 bottom-4 w-0.5 bg-indigo-100 z-0 rounded-full" />
-                    
-                    <div className="relative z-10 space-y-6">
-                      {rounds.map((round, i) => (
-                        <div key={round.id} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                          <RoundCard 
-                            round={round} 
-                            index={i} 
-                            candidateId={candidate.id}
-                            roleId={candidate.roleId}
-                            onUpdate={(updated) => setRounds(prev => prev.map(r => r.id === updated.id ? updated : r))}
-                          />
-                        </div>
-                      ))}
+              <div className="flex-1 overflow-y-auto bg-slate-50/40">
+                <TabsContent value="resume" className="p-8 m-0 outline-none">
+                  <div className="max-w-3xl mx-auto space-y-6">
+                    <div className="flex items-center justify-between">
+                       <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Full Resume Text</h3>
+                       <Button variant="ghost" size="sm" className="text-[10px] font-bold uppercase text-indigo-600 hover:text-indigo-700 h-8 flex items-center gap-2" onClick={() => {
+                          const blob = new Blob([candidate.raw_resume_text || ""], { type: 'text/plain' });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `${candidate.name}_resume.txt`;
+                          a.click();
+                       }}>
+                          <Download className="w-3.5 h-3.5" />
+                          Download Text
+                       </Button>
+                    </div>
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 prose prose-sm max-w-none text-slate-700 whitespace-pre-wrap font-mono text-[13px] leading-relaxed">
+                      {candidate.raw_resume_text || "No text available for analysis."}
                     </div>
                   </div>
-                )}
-                
-                <div className="h-8" />
-              </div>
-            </TabsContent>
+                </TabsContent>
 
-            {/* ── Profile Tab ──────────────────────────────────── */}
-            <TabsContent value="profile" className="flex-1 min-h-0 overflow-y-auto mt-0 outline-none focus-visible:ring-0">
-              <div className="px-8 py-6 space-y-6 max-w-4xl mx-auto w-full">
+                <TabsContent value="evaluation" className="p-8 m-0 outline-none">
+                  <div className="max-w-3xl mx-auto space-y-8">
+                    <div className="flex justify-end">
+                       <Button 
+                         variant="outline" 
+                         size="sm" 
+                         className="text-[10px] font-black uppercase tracking-[0.1em] h-10 px-6 bg-white shadow-sm border-slate-200 hover:bg-slate-50"
+                         onClick={handleRefreshResumeAnalyzer}
+                         disabled={isAnalyzingResume}
+                        >
+                          {isAnalyzingResume ? <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5 mr-2 text-indigo-500" />}
+                          Refresh Resume Analyzer
+                       </Button>
+                    </div>
 
-                {/* Resume Summary */}
-                <section>
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                    <Quote className="w-4 h-4" /> Resume Summary
-                  </h3>
-                  <p className="text-sm text-slate-700 leading-relaxed bg-white p-5 rounded-xl border border-slate-200 italic shadow-sm">
-                    &ldquo;{candidate.resume_summary || "No summary available."}&rdquo;
-                  </p>
-                </section>
-
-                {/* Work Experience */}
-                <section>
-                  <h3 className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-3 flex items-center gap-2">
-                    <Briefcase className="w-4 h-4" /> Work Experience
-                  </h3>
-                  <div className="space-y-6">
-                    {candidate.profile_data.experience.map((exp, i) => (
-                      <div key={i} className="border-l-2 border-indigo-200 pl-5 space-y-2">
-                        <div className="flex justify-between items-start gap-4">
-                          <div>
-                            <h4 className="text-base font-bold text-slate-900">{exp.role}</h4>
-                            <p className="text-sm text-slate-600 font-medium">{exp.company}</p>
-                          </div>
-                          <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded shrink-0 border border-slate-200">
-                            {exp.duration}
-                          </span>
+                    {!candidate.resume_review_data ? (
+                       <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-4"><Gauge className="w-12 h-12 opacity-20" /><p className="text-sm font-bold uppercase tracking-widest opacity-50">Analysis Pending</p></div>
+                    ) : (
+                      <>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                           <div className="md:col-span-2 bg-indigo-600 rounded-2xl p-7 text-white shadow-lg relative overflow-hidden flex flex-col justify-center">
+                              <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">Strategic Hiring Thesis</span>
+                              <p className="mt-4 text-[13.5px] font-medium leading-relaxed italic pr-4">
+                                "{candidate.resume_review_data.hiring_thesis || candidate.resume_review_data.resume_summary}"
+                              </p>
+                              <div className="mt-8 flex items-center gap-4">
+                                <div className="h-1.5 flex-1 bg-white/20 rounded-full overflow-hidden">
+                                   <div className="h-full bg-white" style={{ width: `${candidate.resume_score}%` }} />
+                                </div>
+                                <span className="text-2xl font-black">{Math.round(candidate.resume_score || 0)}%</span>
+                              </div>
+                           </div>
+                           <div className="bg-white rounded-2xl p-6 border border-slate-200 flex flex-col items-center justify-center shadow-sm">
+                              <ScoreGauge value={(candidate.resume_score || 0) / 10} label="Resume Match" />
+                           </div>
                         </div>
-                        <ul className="space-y-1.5 mt-2">
-                          {exp.achievements.map((ach, j) => (
-                            <li key={j} className="text-sm text-slate-600 flex gap-2.5 leading-relaxed">
-                              <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
-                              <span>{ach}</span>
-                            </li>
+
+                        <div className="space-y-6">
+                          <div className="flex items-center gap-4">
+                            <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Detailed Rubric Scores</h4>
+                            <div className="h-px w-full bg-slate-100" />
+                          </div>
+                          <div className="grid gap-3">
+                            {[
+                              ...(candidate.resume_review_data.universal_rubric_scores || []),
+                              ...(candidate.resume_review_data.role_specific_rubric_scores || [])
+                            ].map((r: any, i: number) => (
+                              <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200 flex items-start gap-4 transition-all hover:border-indigo-200 group">
+                                <div className={`shrink-0 w-10 h-10 rounded-xl flex flex-col items-center justify-center border ${r.score >= 3 ? "bg-emerald-50 border-emerald-100 text-emerald-600" : "bg-rose-50 border-rose-100 text-rose-600"}`}>
+                                  <span className="text-xs font-black">{r.score}</span>
+                                  <span className="text-[8px] font-bold uppercase opacity-60">/4</span>
+                                </div>
+                                <div className="space-y-1">
+                                  <p className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{r.rubric || r.parameter || "Skill Metric"}</p>
+                                  <p className="text-[12px] text-slate-500 leading-snug">{r.justification || r.explanation || "No explanation provided."}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="guide" className="p-8 m-0 outline-none">
+                  <div className="max-w-3xl mx-auto">
+                    <div className="flex items-center justify-between mb-8">
+                       <div className="space-y-1">
+                         <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">Precision Interview Questions</h3>
+                         <p className="text-[11px] text-slate-500">Targeted probes for {candidate.name}'s profile.</p>
+                       </div>
+                       <Button 
+                         variant="outline" 
+                         className="h-10 text-[10px] font-black uppercase tracking-widest px-6 border-slate-200 hover:bg-slate-50 shadow-sm bg-white"
+                         onClick={() => fetchGuide(true)}
+                         disabled={isRefreshingGuide}
+                       >
+                         {isRefreshingGuide ? <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5 mr-2 text-indigo-500" />}
+                         Regenerate Interview Guide
+                       </Button>
+                    </div>
+
+                    {isLoadingGuide ? (
+                      <div className="flex flex-col items-center justify-center py-20 gap-4"><Loader2 className="w-8 h-8 animate-spin text-indigo-500" /><p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Synthesizing personalized guide...</p></div>
+                    ) : !guideData?.guide ? (
+                      <div className="text-center py-20 border-2 border-dashed border-slate-200 rounded-3xl bg-white"><Zap className="w-12 h-12 mx-auto text-slate-200 mb-6" /><Button onClick={() => fetchGuide()} size="sm" className="bg-slate-900 text-white font-black px-8 h-11 uppercase text-[10px] tracking-widest">Generate Interview Guide</Button></div>
+                    ) : (
+                      <div className="space-y-10">
+                        {guideData.guide.map((cat: any, i: number) => (
+                          <div key={i} className="space-y-5">
+                            <div className="flex items-center gap-4">
+                              <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">{cat.category} Round</h3>
+                              <div className="h-px flex-1 bg-slate-200" />
+                            </div>
+                            <div className="grid gap-4">
+                              {cat.questions?.map((q: any, j: number) => (
+                                <div key={j} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                                  <div className="px-6 py-5 bg-slate-50/50 border-b border-slate-100 font-semibold text-[13px] text-slate-800 tracking-tight uppercase">{q.question}</div>
+                                  <div className="grid grid-cols-2 divide-x divide-slate-100 p-6 gap-6">
+                                    <div className="space-y-2">
+                                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Strong Signal</p>
+                                      <p className="text-xs text-slate-600 leading-relaxed font-medium bg-emerald-50/20 p-3 rounded-xl border border-emerald-50">{q.lookFor?.strong || q.sampleAnswer}</p>
+                                    </div>
+                                    <div className="pl-6 space-y-2">
+                                      <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Red Flag</p>
+                                      <p className="text-xs text-slate-600 leading-relaxed font-medium bg-rose-50/20 p-3 rounded-xl border border-rose-50">{q.lookFor?.poor || "Vague or non-committal response."}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="interviews" className="p-8 m-0 outline-none">
+                  <div className="max-w-3xl mx-auto space-y-10">
+                    <ScheduleRoundForm 
+                        candidateId={candidate.id} 
+                        roleId={candidate.roleId} 
+                        onSuccess={(round) => { setRounds(prev => [...prev, round]); }} 
+                    />
+
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-4">
+                        <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Interview Rounds History</h4>
+                        <div className="h-px w-full bg-slate-100" />
+                      </div>
+
+                      {isLoadingRounds ? (
+                        <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-slate-300" /></div>
+                      ) : rounds.length === 0 ? (
+                        <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
+                          <Clock className="w-10 h-10 mx-auto text-slate-100 mb-3" />
+                          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No rounds scheduled.</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {rounds.map((r) => (
+                            <div key={r.id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-6 group hover:border-indigo-200/50 transition-all">
+                              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${ROUND_COLOR[r.round_type] || "bg-slate-100 text-slate-400"}`}>
+                                <User className="w-5 h-5" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{ROUND_LABEL[r.round_type] || r.round_type}</h4>
+                                  <Badge variant="outline" className="text-[9px] font-bold text-slate-400 border-slate-200">{new Date(r.interview_date || r.created_at).toLocaleDateString()}</Badge>
+                                </div>
+                                <p className="text-xs text-slate-500 truncate italic">
+                                  {r.ai_feedback_json?.overallFeedback || (r.transcript_text ? "Analysis in progress..." : "Awaiting interview data...")}
+                                </p>
+                              </div>
+                              
+                              <div className="flex items-center gap-4">
+                                {r.cumulative_score !== null ? (
+                                  <div className="text-right">
+                                    <div className="text-lg font-black text-indigo-600 leading-none">{Math.round(r.cumulative_score)}%</div>
+                                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Match</div>
+                                  </div>
+                                ) : (
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="bg-indigo-600 text-white border-transparent font-black text-[10px] uppercase tracking-widest h-10 px-6 hover:bg-slate-900 transition-all shadow-md active:scale-95"
+                                    onClick={() => handleGenerateInterviewAnalysis(r.id)}
+                                    disabled={analyzingRoundId === r.id}
+                                  >
+                                    {analyzingRoundId === r.id ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Zap className="w-3.5 h-3.5 mr-2" />}
+                                    Generate Interview Analysis
+                                  </Button>
+                                )}
+                                <Button variant="ghost" size="icon" className="text-slate-300"><MoreVertical className="w-4 h-4" /></Button>
+                              </div>
+                            </div>
                           ))}
-                        </ul>
-                      </div>
-                    ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </section>
-
-                {/* Education */}
-                <section>
-                  <h3 className="text-xs font-bold text-amber-600 uppercase tracking-widest mb-3 flex items-center gap-2">
-                    <BookOpen className="w-4 h-4" /> Education
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {candidate.profile_data.education.map((edu, i) => (
-                      <div key={i} className="bg-gradient-to-br from-amber-50 to-white border border-amber-200 rounded-xl p-4 shadow-sm">
-                        <p className="text-sm font-bold text-slate-900">{edu.school}</p>
-                        <p className="text-xs text-amber-800 font-medium mt-1">{edu.degree}</p>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-
-                <div className="h-8" />
+                </TabsContent>
               </div>
-            </TabsContent>
-          </Tabs>
+            </Tabs>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
