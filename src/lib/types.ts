@@ -5,13 +5,14 @@ export interface Role {
   title: string; // e.g., "Senior Product Manager"
   status: RoleStatus;
   full_jd_text?: string | null;
+  category?: string;
   appliedCount: number;
   rejectedCount: number;
   reviewCount: number;
   interviewCount: number;
 }
 
-export type CandidateStatus = 'Applied' | 'Screening' | 'Shortlisted' | 'Interview Scheduled' | 'Rejected';
+export type CandidateStatus = 'Applied' | 'Screening' | 'Shortlisted' | 'Interview' | 'Interview Scheduled' | 'Rejected';
 
 export interface Experience {
   company: string;
@@ -38,6 +39,7 @@ export interface Candidate {
   status: CandidateStatus;
   resume_score: number | null;
   interview_score?: number | null;
+  interview_summary?: string | null;
   resume_summary?: string | null;
   resume_review_data?: any | null;
   raw_resume_text?: string | null;

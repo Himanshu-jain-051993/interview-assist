@@ -1,5 +1,6 @@
 
 import { getGeminiModel, withRetry } from "@/lib/gemini-utils";
+import { prisma } from "@/lib/prisma";
 import fs from "fs";
 import path from "path";
 
@@ -44,7 +45,23 @@ export async function performMasterAudit(
 
   const rawKey = roleCategory.toLowerCase().replace(/\s+/g, "_");
   const roleKey = mapping[rawKey] || rawKey;
-  const roleRubricsData = rubricsData.role_specific_rubrics[roleKey] || [];
+  
+  // 🔍 DYNAMIC RUBRIC FETCH
+  // We first try to get rubrics from the database (for dynamic roles like Category Manager)
+  // If not found, we fallback to the static JSON file
+  const dbRubrics = await (prisma as any).rubric.findMany({
+    where: { category: roleCategory }
+  });
+
+  let roleRubricsData = [];
+  if (dbRubrics && dbRubrics.length > 0) {
+    console.log(`[Auditor] Using ${dbRubrics.length} database rubrics for category: ${roleCategory}`);
+    roleRubricsData = dbRubrics;
+  } else {
+    console.log(`[Auditor] Category "${roleCategory}" not in DB. Falling back to static JSON...`);
+    roleRubricsData = rubricsData.role_specific_rubrics[roleKey] || [];
+  }
+
   const roleRubrics = JSON.stringify(roleRubricsData, null, 2);
   const weights = JSON.stringify(rubricsData.evaluation_weights, null, 2);
 

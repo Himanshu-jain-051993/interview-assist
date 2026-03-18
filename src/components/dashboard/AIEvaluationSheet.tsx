@@ -38,6 +38,7 @@ const STAGE_OPTIONS: CandidateStatus[] = [
   "Applied",
   "Screening",
   "Shortlisted",
+  "Interview",
   "Interview Scheduled",
   "Rejected",
 ];
@@ -46,7 +47,8 @@ const STATUS_COLORS: Record<CandidateStatus, string> = {
   Applied:              "bg-slate-100 text-slate-700",
   Screening:            "bg-blue-100 text-blue-700",
   Shortlisted:          "bg-emerald-100 text-emerald-700",
-  "Interview Scheduled":"bg-violet-100 text-violet-700",
+  Interview:            "bg-violet-100 text-violet-700",
+  "Interview Scheduled": "bg-indigo-100 text-indigo-700",
   Rejected:             "bg-rose-100 text-rose-700",
 };
 
@@ -82,7 +84,6 @@ export function AIEvaluationSheet({
   const [status, setStatus] = useState<CandidateStatus | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [isUploading, setIsUploading] = useState(false);
-  const [isDragOver, setIsDragOver] = useState(false);
   const [synthesis, setSynthesis] = useState<SynthesisResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -174,13 +175,6 @@ export function AIEvaluationSheet({
     const file = e.target.files?.[0];
     if (file) processFile(file);
     e.target.value = "";
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) processFile(file);
   };
 
   if (!candidate) return null;
@@ -324,21 +318,17 @@ export function AIEvaluationSheet({
                 </div>
               )}
 
-              {/* Drop zone */}
+              {/* Upload zone */}
               <div
-                onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
-                onDragLeave={() => setIsDragOver(false)}
-                onDrop={handleDrop}
                 onClick={() => !isUploading && fileInputRef.current?.click()}
                 className={`
                   relative flex flex-col items-center justify-center gap-2 
                   border-2 border-dashed rounded-xl p-6 cursor-pointer
                   transition-all duration-200
-                  ${isDragOver
-                    ? "border-violet-400 bg-violet-50"
+                  ${isUploading 
+                    ? "opacity-60 pointer-events-none" 
                     : "border-slate-200 bg-slate-50/50 hover:border-violet-300 hover:bg-violet-50/30"
                   }
-                  ${isUploading ? "pointer-events-none opacity-60" : ""}
                 `}
               >
                 <input
@@ -351,7 +341,7 @@ export function AIEvaluationSheet({
                 <Upload className="w-6 h-6 text-slate-400" />
                 <div className="text-center">
                   <p className="text-sm font-medium text-slate-700">
-                    Drop your transcript here
+                    Select transcript to upload
                   </p>
                   <p className="text-xs text-slate-400 mt-0.5">
                     Supports .pdf, .docx, .txt

@@ -22,6 +22,6 @@ export async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
  * Standard model getter for the Paid Tier.
  * Using gemini-2.0-flash for high performance and reliability.
  */
-export function getGeminiModel(modelName = "gemini-2.5-flash") {
+export function getGeminiModel(modelName = "gemini-2.5-flash-lite") {
   return genAI.getGenerativeModel({ model: modelName });
 }

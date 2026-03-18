@@ -44,12 +44,13 @@ const STAGE_OPTIONS: CandidateStatus[] = [
   "Applied",
   "Screening",
   "Shortlisted",
+  "Interview",
   "Interview Scheduled",
   "Rejected",
 ];
 
-// Stages at/above Interview Scheduled — unlock guide
-const ADVANCED_STAGES: CandidateStatus[] = ["Interview Scheduled"];
+// Stages at/above Interview — unlock cockpit
+const ADVANCED_STAGES: CandidateStatus[] = ["Interview", "Interview Scheduled"];
 
 const getScoreLabel = (score: number) => {
   if (score >= 90) return "Strong";
@@ -89,6 +90,11 @@ export function CandidateTable({ candidates, onDeleted }: CandidateTableProps) {
       });
       if (!res.ok) throw new Error("Update failed");
       toast.success(`Stage updated: ${newStatus}`);
+      
+      // Sync with review sheet if it's open for this candidate
+      if (reviewCandidate?.id === id) {
+        setReviewCandidate(prev => prev ? { ...prev, status: newStatus } : null);
+      }
     } catch (err) {
       toast.error("Failed to update stage");
       // Rollback
@@ -103,7 +109,7 @@ export function CandidateTable({ candidates, onDeleted }: CandidateTableProps) {
       case "applied":              return "text-slate-600 border-slate-200 bg-slate-50";
       case "screening":            return "text-blue-600 border-blue-200 bg-blue-50";
       case "shortlisted":          return "text-emerald-600 border-emerald-200 bg-emerald-50";
-      case "interview scheduled":  return "text-violet-600 border-violet-200 bg-violet-50";
+      case "interview":            return "text-violet-600 border-violet-200 bg-violet-50";
       case "rejected":             return "text-rose-600 border-rose-200 bg-rose-50";
       default:                     return "text-slate-600 border-slate-200 bg-slate-50";
     }
@@ -187,13 +193,16 @@ export function CandidateTable({ candidates, onDeleted }: CandidateTableProps) {
   };
 
   const handleDeleteCandidate = async (candidateId: string) => {
+    console.log("[Delete] Triggered for:", candidateId);
     if (!confirm("Are you sure you want to delete this candidate?")) return;
     setIsDeleting(candidateId);
     try {
       const res = await fetch(`/api/candidates/${candidateId}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Delete failed");
+      toast.success("Candidate deleted");
       onDeleted?.();
     } catch (err) {
+      console.error("[Delete] Error:", err);
       toast.error("Failed to delete candidate");
     } finally {
       setIsDeleting(null);
@@ -207,20 +216,37 @@ export function CandidateTable({ candidates, onDeleted }: CandidateTableProps) {
           <TableRow>
             <TableHead className="w-[200px] font-bold text-[11px] uppercase tracking-widest text-slate-500 py-4 pl-6">Candidate Name</TableHead>
             <TableHead className="font-bold text-[11px] uppercase tracking-widest text-slate-500 py-4">Stage</TableHead>
-            <TableHead className="font-bold text-[11px] uppercase tracking-widest text-slate-500 py-4 text-center">Resume Fit</TableHead>
+            <TableHead className="font-bold text-[11px] uppercase tracking-widest text-slate-500 py-4 text-center">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger render={<span className="flex items-center justify-center gap-1 cursor-help uppercase" />}>
+                    Resume Fit <Info className="w-3 h-3 text-slate-300 inline ml-1" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="w-64 bg-slate-900 border-slate-800 text-white p-3 rounded-xl shadow-2xl">
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-indigo-400 mb-1">Resume Fit Score</p>
+                    <p className="text-[10px] text-slate-200 leading-relaxed">
+                      This score (0–100) represents how well the candidate's skills and experience align with the specific rubrics extracted from the Job Description.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </TableHead>
             <TableHead className="font-bold text-[11px] uppercase tracking-widest text-slate-500 py-4 text-center">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger render={<span className="flex items-center justify-center gap-1 cursor-help" />}>
                     Interview <Info className="w-3 h-3 text-slate-300 inline ml-1" />
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="w-64 bg-slate-900 border-slate-800 text-white text-[11px] leading-relaxed p-3 rounded-xl">
-                    AI interview score (0–100). Upload a transcript in the candidate's <strong>Interview Analysis</strong> tab to generate this score.
+                  <TooltipContent side="top" className="w-64 bg-slate-900 border-slate-800 text-white p-3 rounded-xl shadow-2xl">
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-indigo-400 mb-1">Interview Analysis</p>
+                    <p className="text-[10px] text-slate-200 leading-relaxed">
+                      This is the AI interview score (0–100). Upload a transcript in the <strong>Interview Analysis</strong> tab to generate this score.
+                    </p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </TableHead>
-            <TableHead className="text-right font-bold text-[11px] uppercase tracking-widest text-slate-500 py-4 pr-6">Quick Actions</TableHead>
+            <TableHead className="text-right font-bold text-[11px] uppercase tracking-widest text-slate-500 py-4 pr-6"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -261,42 +287,12 @@ export function CandidateTable({ candidates, onDeleted }: CandidateTableProps) {
                 {/* Score */}
                 <TableCell className="text-center">
                   {candidate.resume_score !== null ? (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger render={
-                          <div className="flex flex-col items-center gap-1.5 cursor-help group/score" />
-                        }>
-                          <div className="flex items-center gap-3 w-32">
-                            <Progress value={candidate.resume_score} className="h-1.5 bg-slate-100 ring-1 ring-slate-100" />
-                            <span className={`text-[13px] font-black tabular-nums w-8 ${getScoreColor(candidate.resume_score)}`}>
-                              {Math.round(candidate.resume_score)}%
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                             <Info className="w-2.5 h-2.5 text-slate-300 group-hover/score:text-slate-500 transition-colors" />
-                             <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest group-hover/score:text-slate-500">Details</span>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="w-80 p-4 bg-slate-900 border-slate-800 shadow-2xl rounded-xl">
-                          <div className="space-y-2">
-                             <p className="font-black text-indigo-400 uppercase tracking-widest text-[10px]">Score Breakdown</p>
-                             <p className="text-white text-[11px] leading-relaxed">
-                               This score is a weighted average of {candidate.resume_review_data?.universal_rubric_scores?.length || 5} universal match parameters (40%) and {candidate.resume_review_data?.role_specific_rubric_scores?.length || 3} role-specific signals (60%).
-                             </p>
-                             <div className="pt-2 border-t border-slate-800 grid grid-cols-2 gap-2 text-[10px]">
-                                <div>
-                                  <span className="text-slate-400 block mb-0.5">Universal Fit</span>
-                                  <span className="text-white font-bold">{candidate.resume_review_data?.scores?.universal_fit_score ? getScoreLabel(candidate.resume_review_data.scores.universal_fit_score) : "?"}</span>
-                                </div>
-                                <div>
-                                  <span className="text-slate-400 block mb-0.5">Role Specific</span>
-                                  <span className="text-white font-bold">{candidate.resume_review_data?.scores?.role_specific_fit_score ? getScoreLabel(candidate.resume_review_data.scores.role_specific_fit_score) : "?"}</span>
-                                </div>
-                             </div>
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <div className="flex items-center justify-center gap-3">
+                      <Progress value={candidate.resume_score} className="h-1.5 w-24 bg-slate-100 ring-1 ring-slate-100" />
+                      <span className={`text-[13px] font-black tabular-nums w-8 ${getScoreColor(candidate.resume_score)}`}>
+                        {Math.round(candidate.resume_score)}%
+                      </span>
+                    </div>
                   ) : (
                     <div className="flex items-center justify-center gap-2 text-slate-300">
                       <Loader2 className="w-3 h-3 animate-spin" />
@@ -324,8 +320,11 @@ export function CandidateTable({ candidates, onDeleted }: CandidateTableProps) {
                          <TooltipTrigger render={<span className="inline-block cursor-help" />}>
                            <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">—</span>
                          </TooltipTrigger>
-                         <TooltipContent side="top" className="w-60 bg-slate-900 border-slate-800 text-white text-[11px] leading-relaxed p-3 rounded-xl">
-                           No interview analysis yet. Open this candidate → <strong>Interview Analysis</strong> tab → upload a transcript to generate a score.
+                         <TooltipContent side="top" className="w-60 bg-slate-900 border-slate-800 text-white p-3 rounded-xl shadow-2xl">
+                           <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 mb-1">Awaiting Analysis</p>
+                           <p className="text-[10px] text-slate-200 leading-relaxed">
+                             No interview analysis yet. Open <strong>Interview Cockpit</strong> → <strong>Interview Analysis</strong> tab → upload a transcript.
+                           </p>
                          </TooltipContent>
                        </Tooltip>
                      </TooltipProvider>
@@ -345,32 +344,45 @@ export function CandidateTable({ candidates, onDeleted }: CandidateTableProps) {
                       <Zap className="w-3 h-3 mr-1.5 fill-current" />
                       Resume Analysis
                     </Button>
+                    {/* Interview Cockpit — always visible, inactive if not at Interview stage */}
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger render={<span className="inline-block" />}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={`h-8 border-violet-200 text-violet-700 bg-violet-50/30 transition-all text-[11px] font-black uppercase tracking-tighter ${
+                              isAdvanced 
+                                ? "hover:bg-violet-600 hover:text-white hover:border-violet-600 shadow-sm" 
+                                : "opacity-40 cursor-not-allowed grayscale"
+                            }`}
+                            onClick={() => isAdvanced && openReviewSheet(candidate, "guide")}
+                          >
+                            <MessageSquareQuote className="w-3 h-3 mr-1.5 fill-current" />
+                            Interview Cockpit
+                          </Button>
+                        </TooltipTrigger>
+                        {!isAdvanced && (
+                          <TooltipContent side="top" className="bg-slate-900 text-white text-[10px] p-2 rounded-lg font-bold border-slate-800">
+                            Set status to Interview to use Interview Cockpit
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
 
-                    {/* Interview Guide — only for advanced stages */}
-                    {isAdvanced && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 border-slate-200 text-slate-600 hover:bg-slate-50 transition-all text-[11px] font-black uppercase tracking-tighter"
-                        onClick={() => openReviewSheet(candidate, "guide")}
-                      >
-                        <MessageSquareQuote className="w-3 h-3 mr-1.5" />
-                        Interview Guide
-                      </Button>
-                    )}
-
-                    {/* Delete — only visible on hover */}
+                    {/* Delete — Always visible */}
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-rose-500 hover:text-rose-700 hover:bg-rose-50 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteCandidate(candidate.id);
-                      }}
+                      className="h-8 w-8 text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition-all"
+                      onClick={() => handleDeleteCandidate(candidate.id)}
                       disabled={isDeleting === candidate.id}
                     >
-                      {isDeleting === candidate.id ? <Loader2 className="w-4 h-4 animate-spin text-rose-500" /> : <Trash2 className="w-4 h-4" /> }
+                      {isDeleting === candidate.id ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
                     </Button>
                   </div>
                 </TableCell>
@@ -382,13 +394,14 @@ export function CandidateTable({ candidates, onDeleted }: CandidateTableProps) {
 
       {/* ── Candidate Review Sheet (Integrated Guide, Resume Analysis, etc.) ── */}
       <CandidateReviewSheet
-        candidate={reviewCandidate}
+        candidate={reviewCandidate ? { ...reviewCandidate, status: localStatuses[reviewCandidate.id] || reviewCandidate.status } : null}
         guideData={guideData}
         isOpen={!!reviewCandidate}
         isRefreshing={isGenerating || isRefreshingReview}
         initialTab={activeTab}
         onRefresh={(force?: boolean) => reviewCandidate && handleGenerateGuide(reviewCandidate, !!force)}
         onRefreshReview={handleRefreshReview}
+        onStatusChange={(newStatus) => reviewCandidate && handleStatusChange(reviewCandidate.id, newStatus as CandidateStatus)}
         onClose={() => {
           if (!isGenerating && !isRefreshingReview) {
             setReviewCandidate(null);

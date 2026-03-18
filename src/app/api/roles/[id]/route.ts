@@ -44,6 +44,30 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   }
 }
 
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    
+    const role = await prisma.role.findUnique({
+      where: { id }
+    });
+
+    if (!role) {
+      return NextResponse.json({ error: "Role not found" }, { status: 404 });
+    }
+
+    // Fetch rubrics for this category
+    const rubrics = await (prisma as any).rubric.findMany({
+      where: { category: role.category }
+    });
+
+    return NextResponse.json({ role, rubrics });
+  } catch (error: any) {
+    console.error("Error fetching role details:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;

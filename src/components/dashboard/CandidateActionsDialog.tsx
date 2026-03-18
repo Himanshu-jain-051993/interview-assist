@@ -41,16 +41,18 @@ const STAGE_OPTIONS: CandidateStatus[] = [
   "Applied",
   "Screening",
   "Shortlisted",
+  "Interview",
   "Interview Scheduled",
   "Rejected",
 ];
 
 const STAGE_COLORS: Record<CandidateStatus, string> = {
-  Applied:              "bg-slate-100 text-slate-700",
-  Screening:            "bg-blue-100 text-blue-700",
-  Shortlisted:          "bg-emerald-100 text-emerald-700",
-  "Interview Scheduled":"bg-violet-100 text-violet-700",
-  Rejected:             "bg-rose-100 text-rose-700",
+  Applied: "bg-slate-100 text-slate-700",
+  Screening: "bg-blue-100 text-blue-700",
+  Shortlisted: "bg-emerald-100 text-emerald-700",
+  Interview: "bg-violet-100 text-violet-700",
+  "Interview Scheduled": "bg-indigo-100 text-indigo-700",
+  Rejected: "bg-rose-100 text-rose-700",
 };
 
 const ROUND_LABEL: Record<string, string> = {

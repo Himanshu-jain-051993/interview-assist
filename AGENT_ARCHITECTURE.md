@@ -4,61 +4,47 @@ This document outlines the multi-agent system powering the Interview Assist appl
 
 ---
 
-## 🏗️ The Orchestrator (Next.js API Layer)
-Rather than an LLM autonomously wandering through your system, **Next.js API Routes** act as the deterministically coded Orchestrator. 
+## 🏗️ The Orchestrator (Next.js & Prisma)
+The system is built on a deterministic **Next.js API layer** which acts as the central orchestrator, managing data flow between the UI, the PostgreSQL database, and the AI Agents.
 
-**What it does:**
-1. **Routing & Triggering:** It listens to human interactions in the frontend UI (e.g., clicking "Generate Guide" or "Generate AI Feedback").
-2. **Data Fetching:** It queries the Supabase database (via Prisma) to gather necessary context before calling any LLMs.
-3. **Delegation:** It constructs highly specific prompts by injecting the fetched data and delegates the execution to one of the specialized sub-agents below.
-4. **Tool Access:** It possesses file parsing tools (`mammoth` for DOCX, `pdf-parse` for PDF) and feeds the extracted flat text into the agents.
+**Core Responsibilities:**
+1. **Context Assembly:** Fetches Job Descriptions, Candidate Resumes, and Historical Round data via Prisma to build a complete "Hiring Context."
+2. **File Processing:** Real-time extraction of structured text from uploaded `.pdf` and `.docx` transcripts using `mammoth` and `pdf-parse`.
+3. **Agent Delegation:** Routes requests to specialized agents based on the user's current workflow (Sourcing vs. Interviewing).
+4. **Scoring Governance:** Directly calculates normalized 0-100 scores based on raw 1-4 rubric inputs from the AI to prevent "score hallucination."
 
 ---
 
 ## 🤖 Specialized Sub-Agents
+The system leverages **Gemini 1.5 Flash** for its reasoning tasks, utilizing high-context windows to process entire transcripts without chunking.
 
-The system uses three primary sub-agents. Each one is a heavily context-scoped prompt powered by the **Gemini 2.5 Flash** model. They are strictly designed to output enforced schemas (typically JSON) rather than chitchat.
+### 1. The Resume Fit Architect
+**Use Case:** Initial sourcing and screening.
+**Logic:** Audits the candidate's resume against the role's performance rubrics. It produces an "Executive Summary" and a "Universal Fit Score" to help recruiters prioritize the pipeline.
 
-### 1. The Interview Architect (`interview-architect.ts`)
-**Use Case:** Pre-interview preparation. Generates highly customized interview questions and scoring guides tailored to a specific candidate's resume and the company's job description.
-**How it behaves:** 
-- It maps the candidate’s past projects directly to the required rubrics (e.g., asking how a candidate's specific "SQL Migration" project scales to prove their "Analytical Rigor").
-**Data Receptors:**
-- Structured DB Data: `Candidate` (resume JSON), `Role` (JD text), `Rubric` (definitions).
+### 2. The Interview Guide Architect
+**Use Case:** Synchronous interview preparation.
+**Logic:** Synthesizes the gaps identified during resume screening with the requirements of the job description. It generates a "Behavioral & Technical Guide" featuring tailored questions and "What to look for" (Good vs. Poor) signals.
 
-### 2. The Transcript Synthesizer (`transcript-synthesizer.ts`)
-**Use Case:** Post-interview data ingestion. Cleans up messy, uploaded interview transcripts into a structured "Dialogue Map".
-**How it behaves:**
-- Acts as a high-fidelity analyst. It reads Raw Text and extracts questions, answers, and explicit data/metric points without hallucinating or rounding numbers.
-**Data Receptors:**
-- Unstructured Data: Raw text extracted from `.docx` or `.pdf` files.
-- Configuration: Job context (Role Title/Level) to anchor extraction logic.
-
-### 3. The Hiring Committee Lead / Feedback Architect (`interview-feedback-architect.ts`)
-**Use Case:** Evaluation and decision science. Analyzes the interviewer's notes alongside the actual transcript to grade the candidate and produce a hiring recommendation.
-**How it behaves:**
-- **Attribute Isolation:** It scores candidates on specific rubrics (e.g., "Architecture").
-- **Conflict Audit:** It applies a 70/30 weight logic. It gives heavier weight to Human Notes, but if the human note is wildly subjective ("bad vibes") and conflicts with objective transcript data ("answered the caching question perfectly"), the AI flags a "Skew Alert" or "Subjectivity Warning".
-- **Cumulative Tracking:** It reads the results of *Previous Rounds* to note if a candidate mitigated a gap or validated a strength over time.
-**Data Receptors:**
-- Unstructured Data: Current Round Interviewer Notes (Text), Current Round Transcript (Text).
-- Structured DB Data: Previous `InterviewRound` Feedback JSON history, `Rubric` grading definitions.
+### 3. The Hiring Committee Lead (`interview-feedback-architect.ts`)
+**Use Case:** Post-interview evaluation and round synthesis.
+**Logic:**
+- **Sentiment Precedence (70/30 Rule):** The agent applies a heavy 70% weight to human interviewer notes. If a human identifies a cultural red flag, the AI prioritizes this over general transcript sentiment.
+- **Conflict Audit:** If human observations ("candidate was vague") conflict with transcript evidence ("candidate gave a detailed 5-step answer"), the AI flags a **"Subjectivity Warning"** for the hiring manager.
+- **Cumulative Synthesis:** Every new round evaluation reads the history of **all previous rounds**, allowing the AI to track if a candidate's "Weaknesses" from R1 were mitigated in R2.
 
 ---
 
 ## 🗄️ Data Flow & Storage
 
-Our ecosystem runs on a hybridized data approach, querying SQL tables and processing unstructured data as required:
+1. **Relational Database (PostgreSQL via Prisma):**
+   - **`Role`**: Stores master Job Descriptions and categories.
+   - **`Candidate`**: Tracks progress, current status, and average scores.
+   - **`InterviewRound`**: Stores structured JSON feedback for every interaction, enabling the "Pipeline Timeline" view.
+   - **`Rubric`**: Acts as the objective yardstick for all evaluations.
 
-1. **Relational Data (Supabase / PostgreSQL via Prisma):**
-   - **`Role`:** Source of truth for Job Descriptions and hiring parameters.
-   - **`Candidate`:** Source of truth for applicant profiles.
-   - **`Rubric`:** The grading yardstick.
-   - **`InterviewRound`:** Stores the final AI-generated JSON so it can be queried easily by the frontend without re-generating logic.
+2. **In-Memory File Parsing:**
+   - Transcripts and notes are processed as temporary buffers. Text is extracted, analyzed, and then discarded. Only the **AI-generated insights** (Evidence, Justification, Scores) are persisted for long-term review.
 
-2. **Unstructured File Parsing (Memory):**
-   - Transcripts (`.pdf`, `.docx`) and Notes (`.txt`) are not stored perpetually in cloud storage right now. They are uploaded, rapidly parsed into string text in memory by the Orchestrator, fed into the context window of standard LLM requests, and the resulting insights are stored in the DB.
-
-3. **Retrieval-Augmented Generation (RAG):**
-   - *Current State:* The system is currently relying on **Direct Context Injection** rather than a Vector Database for standard RAG. Because a standard JD, Resume, and Interview Transcript fit easily within Gemini's context window (up to millions of tokens), we inject the exact full-text variables directly into the prompt templates without chunking or vectorizing them.
-   - *Future State:* If we begin parsing thousands of historical interviews to find "similar candidates", the Supabase `vector` extension exists in the Prisma schema to support pgvector nearest-neighbor RAG later!
+3. **Cumulative decision logic:**
+   - The application maintains a "Portfolio Summary" for every candidate. This is a real-time synthesis that updates every time a new interview round is processed, giving the recruiter a single "Hiring Thesis" for the candidate's entire journey.

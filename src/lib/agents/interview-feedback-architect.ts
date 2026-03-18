@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_MODEL = "gemini-2.5-flash-lite";
 
 let genAI: GoogleGenerativeAI | null = null;
 let model: any = null;
@@ -145,7 +145,10 @@ Choose the verdict that EXACTLY matches the cumulativeScore.
       const result = await mdl.generateContent(prompt);
       const text = result.response.text();
       console.log(`[FeedbackArchitect] Response received, length: ${text.length}`);
-      return JSON.parse(text);
+      // Clean markdown if present - be more aggressive with JSON extraction
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      const cleanJson = jsonMatch ? jsonMatch[0] : text.replace(/```json\n?|```/g, "").trim();
+      return JSON.parse(cleanJson);
     } catch (err: any) {
       const msg: string = err?.message ?? "Unknown error";
       const is429 = msg.includes("429") || msg.includes("Too Many Requests") || msg.includes("RESOURCE_EXHAUSTED");

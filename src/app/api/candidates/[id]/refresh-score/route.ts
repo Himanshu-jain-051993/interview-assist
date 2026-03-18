@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { scoreResumeV2 } from "@/lib/resume-scorer";
+import { performMasterAudit } from "@/lib/agents/ultimate-auditor";
 
 export async function POST(
   req: NextRequest,
@@ -28,13 +28,13 @@ export async function POST(
 
     console.log(`[Refresh-Score] Re-scoring candidate ${candidate.name}...`);
 
-    const scoringResult = await scoreResumeV2(
+    const auditResult = await performMasterAudit(
       candidate.role.job_description,
       candidate.raw_resume_text,
       candidate.role.category
     );
 
-    let finalScore = scoringResult.scores.overall_fit_score;
+    let finalScore = auditResult.analysis?.scores?.overall_fit_score || 0;
     if (finalScore > 0 && finalScore <= 4.0) {
       finalScore = (finalScore / 4) * 100;
     }
@@ -43,14 +43,15 @@ export async function POST(
       where: { id: candidate.id },
       data: {
         resume_score: finalScore,
-        resume_review_data: scoringResult as any,
+        resume_review_data: (auditResult.analysis || {}) as any,
+        profile_data: (auditResult.profile || {}) as any,
       },
     });
 
     return NextResponse.json({
       success: true,
-      score: scoringResult.scores.overall_fit_score,
-      reviewData: scoringResult,
+      score: finalScore,
+      reviewData: auditResult.analysis,
     });
   } catch (error: any) {
     console.error("[Refresh-Score] Error:", error);

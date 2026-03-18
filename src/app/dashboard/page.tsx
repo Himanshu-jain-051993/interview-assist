@@ -3,15 +3,16 @@
 import { useEffect, useState } from "react";
 import { Role } from "@/lib/types";
 import { RoleCard } from "@/components/dashboard/RoleCard";
-import { Plus, Loader2, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog";
+import { Plus, Loader2, Search, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
   const [roles, setRoles] = useState<Role[]>([]);
@@ -151,25 +152,56 @@ export default function DashboardPage() {
                 Create Pipeline
               </button>
             } />
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Upload Job Description</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleUploadJD} className="space-y-4 py-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">JD File (.pdf, .docx)</label>
-                <input 
-                  type="file" 
-                  accept=".pdf,.docx,.doc" 
-                  onChange={(e) => setJdFile(e.target.files?.[0] || null)}
-                  required
-                  className="w-full text-sm border p-2 rounded-md"
-                />
+          <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden rounded-3xl border-none shadow-2xl">
+            <div className="bg-gradient-to-br from-indigo-600 to-violet-700 px-8 py-10 text-white relative overflow-hidden">
+              <div className="absolute top-[-20%] right-[-10%] w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+              <div className="relative z-10 flex flex-col gap-2">
+                <div className="h-12 w-12 rounded-2xl bg-white/20 flex items-center justify-center mb-2 backdrop-blur-md">
+                  <Plus className="w-6 h-6 text-white" />
+                </div>
+                <DialogTitle className="text-2xl font-black tracking-tight">Create New Pipeline</DialogTitle>
+                <p className="text-indigo-100/80 text-sm font-medium">Upload a Job Description to initialize AI rubrics.</p>
               </div>
-              <Button type="submit" className="w-full bg-indigo-600" disabled={!jdFile || uploading}>
-                {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                {uploading ? "Parsing JD..." : "Upload & Parse"}
-              </Button>
+            </div>
+            <form onSubmit={handleUploadJD} className="p-8 space-y-8 bg-white">
+              <div className="space-y-4">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">JD File (.pdf, .docx)</label>
+                <div className="relative group">
+                  <input 
+                    type="file" 
+                    id="jd-upload"
+                    accept=".pdf,.docx,.doc" 
+                    onChange={(e) => setJdFile(e.target.files?.[0] || null)}
+                    required
+                    className="sr-only"
+                  />
+                    <label 
+                      htmlFor="jd-upload" 
+                      className={`flex flex-col items-center justify-center py-10 border-2 border-dashed rounded-3xl transition-all cursor-pointer ${
+                        jdFile ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-slate-50 border-slate-200 text-slate-400 hover:border-indigo-300 hover:bg-white hover:text-indigo-500'
+                      }`}
+                    >
+                      {jdFile ? (
+                        <>
+                          <FileText className="w-8 h-8 mb-2" />
+                          <span className="text-xs font-black uppercase tracking-widest text-center px-4">{jdFile.name}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-8 h-8 mb-2 opacity-50" />
+                          <span className="text-xs font-black uppercase tracking-widest">Select JD file</span>
+                        </>
+                      )}
+                    </label>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <DialogClose render={<Button type="button" variant="outline" className="flex-1 h-12 rounded-2xl font-black text-xs uppercase tracking-widest border-slate-100 text-slate-500 hover:bg-slate-50">Cancel</Button>} />
+                <Button type="submit" className="flex-[2] h-12 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-100" disabled={!jdFile || uploading}>
+                  {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+                  {uploading ? "Parsing JD..." : "Create Pipeline"}
+                </Button>
+              </div>
             </form>
           </DialogContent>
         </Dialog>
