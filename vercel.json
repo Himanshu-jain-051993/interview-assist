@@ -1,12 +1,18 @@
 {
   "functions": {
-    "src/app/api/candidates/upload/route.ts": {
+    "app/api/candidates/upload/route.ts": {
       "maxDuration": 60
     },
-    "src/app/api/candidates/upload-v2/route.ts": {
+    "app/api/candidates/upload-v2/route.ts": {
       "maxDuration": 60
     },
-    "src/app/api/candidates/[id]/refresh-score/route.ts": {
+    "app/api/interview-rounds/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/candidates/*/refresh-score/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/candidates/*/analyze/route.ts": {
       "maxDuration": 60
     }
   }
