@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || "");
-// Switching to Flash for production throughput and faster response times
+// Using Gemini 2.5 Flash for state-of-the-art performance
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 export interface ScoringResult {
@@ -36,27 +36,52 @@ export async function scoreResumeV2(
   const rubricsData = JSON.parse(fs.readFileSync(rubricsPath, "utf-8"));
 
   const universalRubrics = JSON.stringify(rubricsData.universal_rubrics, null, 2);
-  const roleKey = roleCategory.toLowerCase().replace(/\s+/g, "_");
+  const mapping: Record<string, string> = {
+    "product_management": "product_manager",
+    "software_engineering": "software_engineer",
+    "data_analytics": "data_analyst",
+    "program_management": "technical_program_manager",
+    "ai_product_management": "ai_product_manager",
+  };
+
+  const rawKey = roleCategory.toLowerCase().replace(/\s+/g, "_");
+  const roleKey = mapping[rawKey] || rawKey;
   const roleRubricsData = rubricsData.role_specific_rubrics[roleKey] || [];
   const roleRubrics = JSON.stringify(roleRubricsData, null, 2);
+  const weights = JSON.stringify(rubricsData.evaluation_weights, null, 2);
 
   const prompt = `
-ROLE: You are the Ultimate Resume Auditor (v8.0).
+ROLE: You are the Ultimate Resume Auditor (v9.0).
 
-TASK: Audit the Resume Text against the JD and Rubrics.
+TASK: Audit the Resume Text AGAINST the provided Rubrics.
 
 JD: ${jd}
 RESUME: ${resumeText.substring(0, 15000)}
 UNIVERSAL RUBRICS: ${universalRubrics}
 ROLE RUBRICS: ${roleRubrics}
+EVALUATION WEIGHTS: ${weights}
+
+STRICT SCORING RULES:
+1. You MUST evaluate against EVERY rubric provided.
+2. You MUST use the EXACT "name" from the rubric definitions for the "rubric" field.
+3. Individual rubric scores MUST be integers 1-4.
+4. "overall_fit_score" calculation:
+   - Calculate Average Universal Score (1-4)
+   - Calculate Average Role Score (1-4)
+   - overall_fit_score = (AvgUniversal * 0.4) + (AvgRole * 0.6)
+   - Return this overall_fit_score as a number 1.0-4.0.
 
 OUTPUT JSON:
 {
-  "resume_summary": "Pithy 50-70 word summary.",
-  "hiring_thesis": "100-word justification.",
-  "universal_rubric_scores": [{ "rubric": "string", "score": 1-4, "justification": "msg" }],
-  "role_specific_rubric_scores": [{ "rubric": "string", "score": 1-4, "justification": "msg" }],
-  "scores": { "universal_fit_score": 0-4, "role_specific_fit_score": 0-4, "overall_fit_score": 0-4 }
+  "resume_summary": "High-density executive summary of 150-175 words describing the candidate's professional narrative, key competencies, and career trajectory signals.",
+  "hiring_thesis": "...",
+  "universal_rubric_scores": [{ "rubric": "Rubric Name", "score": 1-4, "justification": "msg" }],
+  "role_specific_rubric_scores": [{ "rubric": "Rubric Name", "score": 1-4, "justification": "msg" }],
+  "scores": { 
+     "universal_fit_score": 1-4, 
+     "role_specific_fit_score": 1-4, 
+     "overall_fit_score": 1.0-4.0 
+  }
 }
 `;
 

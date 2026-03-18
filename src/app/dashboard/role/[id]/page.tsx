@@ -32,9 +32,9 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  async function fetchData() {
+  async function fetchData(silent = false) {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const rolesRes = await fetch("/api/roles");
       const roles: Role[] = await rolesRes.json();
       const foundRole = roles.find(r => r.id === id);
@@ -50,7 +50,7 @@ export default function RoleDetailPage({ params }: RoleDetailPageProps) {
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }
 

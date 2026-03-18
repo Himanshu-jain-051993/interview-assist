@@ -15,15 +15,15 @@ export async function POST(req: NextRequest) {
 
     // ── 1. Check for a cached guide (unless forced regeneration) ──────────
     if (!force) {
-      const existing = await prisma.$queryRaw<{ guide_data: any }[]>`
-        SELECT guide_data FROM "InterviewGuide"
-        WHERE candidate_id = ${candidateId} AND role_id = ${roleId}
-        LIMIT 1
-      `;
+      const existing = await prisma.interviewGuide.findUnique({
+        where: {
+          candidate_id_role_id: { candidate_id: candidateId, role_id: roleId }
+        }
+      });
 
-      if (existing.length > 0) {
+      if (existing) {
         console.log("CACHE HIT: Returning existing interview guide for", candidateId);
-        return NextResponse.json(existing[0].guide_data);
+        return NextResponse.json(existing.guide_data);
       }
     }
 
@@ -44,14 +44,28 @@ export async function POST(req: NextRequest) {
 
     // ── 3. Call the AI agent ──────────────────────────────────────────────
     const guide = await generateInterviewGuide(candidate, role, rubrics);
+    
+    console.log("GENERATED GUIDE STRUCTURE:", { 
+      hasGuide: !!guide?.guide, 
+      isObject: typeof guide === 'object',
+      isArray: Array.isArray(guide?.guide) 
+    });
 
     // ── 4. Upsert into cache ──────────────────────────────────────────────
-    await prisma.$executeRaw`
-      INSERT INTO "InterviewGuide" (id, candidate_id, role_id, guide_data, generated_at, updated_at)
-      VALUES (gen_random_uuid()::text, ${candidateId}, ${roleId}, ${JSON.stringify(guide)}::jsonb, NOW(), NOW())
-      ON CONFLICT (candidate_id, role_id)
-      DO UPDATE SET guide_data = ${JSON.stringify(guide)}::jsonb, updated_at = NOW()
-    `;
+    await prisma.interviewGuide.upsert({
+      where: {
+        candidate_id_role_id: { candidate_id: candidateId, role_id: roleId }
+      },
+      update: {
+        guide_data: guide as any,
+        updated_at: new Date()
+      },
+      create: {
+        candidate_id: candidateId,
+        role_id: roleId,
+        guide_data: guide as any
+      }
+    });
 
     console.log("CACHE SET: Interview guide stored for", candidateId);
     return NextResponse.json(guide);

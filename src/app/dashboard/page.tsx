@@ -201,8 +201,31 @@ export default function DashboardPage() {
       </div>
 
       {roles.length === 0 ? (
-        <div className="text-center py-20 bg-white rounded-xl border border-dashed border-slate-300">
-          <p className="text-slate-500">No active roles found. Start by creating a new role pipeline.</p>
+        <div className="py-16 bg-white rounded-2xl border border-dashed border-slate-200 space-y-10">
+          <div className="text-center px-6">
+            <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-indigo-100">
+              <Plus className="w-7 h-7 text-white" />
+            </div>
+            <h2 className="text-xl font-black text-slate-900 tracking-tight">Welcome to Interview Assist</h2>
+            <p className="text-sm text-slate-500 mt-2 max-w-lg mx-auto">Your AI-powered hiring co-pilot. Follow the 3-step workflow below to screen candidates and generate structured interview evaluations.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto px-6">
+            <div className="flex flex-col items-center text-center gap-3 p-6 rounded-2xl bg-indigo-50/60 border border-indigo-100">
+              <div className="h-10 w-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-black text-sm shadow">1</div>
+              <p className="text-xs font-black text-slate-800 uppercase tracking-wider">Create a Pipeline</p>
+              <p className="text-[11px] text-slate-500 leading-relaxed">Click <strong>Create Pipeline</strong> and upload a job description (PDF or DOCX). The AI will parse the role details automatically.</p>
+            </div>
+            <div className="flex flex-col items-center text-center gap-3 p-6 rounded-2xl bg-amber-50/60 border border-amber-100">
+              <div className="h-10 w-10 rounded-full bg-amber-500 text-white flex items-center justify-center font-black text-sm shadow">2</div>
+              <p className="text-xs font-black text-slate-800 uppercase tracking-wider">Upload Resumes</p>
+              <p className="text-[11px] text-slate-500 leading-relaxed">Open the pipeline and upload candidate resumes. The AI scores each resume against the role's rubrics, ranking them by fit.</p>
+            </div>
+            <div className="flex flex-col items-center text-center gap-3 p-6 rounded-2xl bg-emerald-50/60 border border-emerald-100">
+              <div className="h-10 w-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-black text-sm shadow">3</div>
+              <p className="text-xs font-black text-slate-800 uppercase tracking-wider">Run AI Interviews</p>
+              <p className="text-[11px] text-slate-500 leading-relaxed">For shortlisted candidates, upload interview transcripts to generate detailed AI evaluations with verdicts, rubric scores, and hiring recommendations.</p>
+            </div>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

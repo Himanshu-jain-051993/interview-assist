@@ -34,47 +34,67 @@ export async function performMasterAudit(
   const rubricsPath = path.join(process.cwd(), "data", "resume_rubrics.json");
   const rubricsData = JSON.parse(fs.readFileSync(rubricsPath, "utf-8"));
   const universalRubrics = JSON.stringify(rubricsData.universal_rubrics, null, 2);
-  const roleKey = roleCategory.toLowerCase().replace(/\s+/g, "_");
+  const mapping: Record<string, string> = {
+    "product_management": "product_manager",
+    "software_engineering": "software_engineer",
+    "data_analytics": "data_analyst",
+    "program_management": "technical_program_manager",
+    "ai_product_management": "ai_product_manager",
+  };
+
+  const rawKey = roleCategory.toLowerCase().replace(/\s+/g, "_");
+  const roleKey = mapping[rawKey] || rawKey;
   const roleRubricsData = rubricsData.role_specific_rubrics[roleKey] || [];
   const roleRubrics = JSON.stringify(roleRubricsData, null, 2);
+  const weights = JSON.stringify(rubricsData.evaluation_weights, null, 2);
 
   const prompt = `
-ROLE: You are the Ultimate Talent Auditor (v10.0). Perform a PARSING and SCORING of the provided Resume.
+ROLE: You are the Ultimate Talent Auditor (v11.0). Perform a PARSING and SCORING of the provided Resume.
 
 INPUTS:
 1. Job Description: ${jd}
 2. Resume Text: ${resumeText.substring(0, 15000)}
 3. Universal Rubrics: ${universalRubrics}
 4. Role Rubrics: ${roleRubrics}
+5. Evaluation Weights: ${weights}
+
+STRICT SCORING RULES:
+1. You MUST evaluate against EVERY rubric provided in "Universal Rubrics" and "Role Rubrics".
+2. You MUST use the EXACT "name" of the rubric from the JSON for the "rubric" field.
+3. Every score MUST be an integer between 1 and 4.
+4. "overall_fit_score" calculation: 
+   - Calculate Average Universal Score (1-4)
+   - Calculate Average Role Score (1-4)
+   - overall_fit_score = (AvgUniversal * 0.4) + (AvgRole * 0.6)
+   - Return this overall_fit_score as a number between 1.0 and 4.0.
 
 OUTPUT FORMAT (STRICT JSON ONLY):
 {
   "profile": {
     "name": "Full Name",
     "email": "extracted@email.com",
-    "summary": "...",
+    "summary": "Short 2-line summary for profile",
     "experience": [],
     "education": []
   },
   "analysis": {
-    "resume_summary": "...",
+    "resume_summary": "High-density executive summary of 150-175 words describing the candidate's professional narrative, key competencies, and career trajectory signals.",
     "hiring_thesis": "...",
-    "universal_rubric_scores": [],
-    "role_specific_rubric_scores": [],
+    "universal_rubric_scores": [
+       { "rubric": "Rubric Name from JSON", "score": 1-4, "justification": "msg" }
+    ],
+    "role_specific_rubric_scores": [
+       { "rubric": "Rubric Name from JSON", "score": 1-4, "justification": "msg" }
+    ],
     "scores": {
-      "overall_fit_score": 85.5
+      "universal_fit_score": 1-4,
+      "role_specific_fit_score": 1-4,
+      "overall_fit_score": 1.0-4.0
     }
   }
 }
 
-SCORING RULES:
-- "overall_fit_score" MUST be a NUMBER between 0 and 100.
-- "universal_rubric_scores" and "role_specific_rubric_scores" MUST be arrays of objects:
-  { "rubric": "Name", "score": 1-4, "justification": "Why?" }
-- If the candidate is a perfect fit, return 100.
-- Never return 0 unless the resume is completely blank or unrelated.
-
-STRICT RULE: Only return valid JSON. Do not include markdown fences.
+STRICT RULE: Only return valid JSON. No markdown fences. No preamble.
 `;
 
   return withRetry(async () => {

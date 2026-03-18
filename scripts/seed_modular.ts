@@ -11,8 +11,13 @@ const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 const embeddingModel = genAI.getGenerativeModel({ model: "models/gemini-embedding-001" });
 
 async function getEmbedding(text: string) {
-  const result = await embeddingModel.embedContent(text);
-  return result.embedding.values;
+  try {
+    const result = await embeddingModel.embedContent(text);
+    return result.embedding.values;
+  } catch (error: any) {
+    console.warn("  [Embedding Failed]", error.message);
+    return null;
+  }
 }
 
 async function seedRoles() {
@@ -58,13 +63,17 @@ async function seedRoles() {
       roleId = newRole.id;
     }
 
-    const embeddingStr = `[${embedding.join(",")}]`;
-    await prisma.$executeRawUnsafe(
-      `UPDATE "Role" SET content_embedding = $1::vector WHERE id = $2`,
-      embeddingStr,
-      roleId
-    );
-    console.log(`  Role ${roleData.title} seeded successfully.`);
+    if (embedding) {
+      const embeddingStr = `[${embedding.join(",")}]`;
+      await prisma.$executeRawUnsafe(
+        `UPDATE "Role" SET content_embedding = $1::vector WHERE id = $2`,
+        embeddingStr,
+        roleId
+      );
+      console.log(`  Role ${roleData.title} seeded with embedding.`);
+    } else {
+      console.log(`  Role ${roleData.title} seeded WITHOUT embedding.`);
+    }
   }
 }
 
@@ -131,6 +140,37 @@ async function seedCandidates() {
     
     const embedding = await getEmbedding(fullText);
 
+    // Construct a readable resume text from the JSON structure
+    const rawResumeText = `
+${candidate.name}
+${candidate.title}
+
+SUMMARY
+${candidate.summary}
+
+EXPERIENCE
+${candidate.experience.map((exp: any) => `
+${exp.role} | ${exp.company} | ${exp.duration}
+${exp.achievements.map((a: string) => `- ${a}`).join("\n")}
+`).join("\n")}
+
+SKILLS
+Product: ${candidate.skills.product_management?.join(", ") || ""}
+Technical: ${candidate.skills.technical_skills?.join(", ") || ""}
+
+EDUCATION
+${candidate.education.map((edu: any) => `${edu.degree} from ${edu.school}`).join("\n")}
+`.trim();
+
+    const profileData = {
+      contact: candidate.contact,
+      summary: candidate.summary,
+      skills: candidate.skills,
+      experience: candidate.experience,
+      education: candidate.education,
+      title: candidate.title,
+    };
+
     // Upsert the candidate
     const upsertedCandidate = await prisma.candidate.upsert({
       where: { email: candidate.contact.email },
@@ -138,13 +178,14 @@ async function seedCandidates() {
         name: candidate.name,
         role_id: role.id,
         stage: "Applied",
-        profile_data: {
-          contact: candidate.contact,
-          summary: candidate.summary,
-          skills: candidate.skills,
-          experience: candidate.experience,
-          education: candidate.education,
-          title: candidate.title,
+        raw_resume_text: rawResumeText,
+        profile_data: profileData as any,
+        // Also pre-populate a basic resume_review_data if it's currently null
+        // this gives the user something to see immediately
+        resume_review_data: {
+          resume_summary: candidate.summary,
+          universal_rubric_scores: [],
+          role_specific_rubric_scores: []
         } as any,
       },
       create: {
@@ -152,13 +193,12 @@ async function seedCandidates() {
         email: candidate.contact.email,
         role_id: role.id,
         stage: "Applied",
-        profile_data: {
-          contact: candidate.contact,
-          summary: candidate.summary,
-          skills: candidate.skills,
-          experience: candidate.experience,
-          education: candidate.education,
-          title: candidate.title,
+        raw_resume_text: rawResumeText,
+        profile_data: profileData as any,
+        resume_review_data: {
+          resume_summary: candidate.summary,
+          universal_rubric_scores: [],
+          role_specific_rubric_scores: []
         } as any,
       },
     });

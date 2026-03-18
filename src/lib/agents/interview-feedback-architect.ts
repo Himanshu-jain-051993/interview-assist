@@ -103,27 +103,39 @@ If one interviewer is an outlier (highly negative) while three other transcripts
 
 OUTPUT SPECIFICATION (JSON ONLY, NO MARKDOWN, NO CODE BLOCKS):
 {
-  "roundScore": 8.0,
-  "cumulativeScore": 7.5,
+  "roundScore": 85,
+  "cumulativeScore": 82,
   "hiringThesis": "A 3-sentence summary of the Hiring Thesis.",
+  "verdict": "Strong hire | Hire | Lean hire | Lean no hire | No hire",
   "skewAlert": "Explicitly list any parameters where the score was significantly lowered by human subjectivity despite technical competence.",
   "evaluationSummary": "2-3 sentence executive summary of this round",
   "hiringConfidenceIndex": 85,
   "recommendedNextStep": "Proceed to Final | Reject | Make Offer",
-  "keyStrengths": ["Strength 1"],
-  "keyGaps": ["Gap 1"],
+  "strengths": ["Strength 1"],
+  "weaknesses": ["Gap 1"],
   "rubricEvaluations": [
     {
       "parameter": "Fetched from ROLE RUBRICS",
       "grade": "Poor | Borderline | Good | Strong",
-      "aiEvidence": "Specific quote from the transcript proving technical/strategic depth.",
+      "score": 1-4,
+      "aiEvidence": "Specific quote or paraphrase from the transcript proving technical/strategic depth for this parameter.",
+      "justification": "Explain EXACTLY why this score was given. State clearly: (1) what the candidate demonstrated that prevented a lower score, and (2) what was missing or insufficient that prevented a higher score. Be specific and reference the rubric criteria.",
       "interviewerInfluence": "How much the human notes shifted this specific grade.",
       "conflictAudit": "Mandatory if the AI evidence is 'Strong' but the Human note is 'Poor'. Explain why the final grade landed where it did.",
       "subjectivityWarning": true,
-      "secondaryMarker": "AI objective score without vague human notes"
+      "secondaryMarkerScore": 1-4
     }
   ]
 }
+
+STRICT RULE: roundScore and cumulativeScore MUST be on a 0 to 100 scale.
+VERDICT MAPPING RULE:
+- Score >= 85: "Strong hire"
+- Score >= 70: "Hire"
+- Score >= 55: "Lean hire"
+- Score >= 40: "Lean no hire"
+- Score < 40: "No hire"
+Choose the verdict that EXACTLY matches the cumulativeScore.
 `;
 
   const MAX_RETRIES = 3;

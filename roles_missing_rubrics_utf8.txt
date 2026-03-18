@@ -1,0 +1,3 @@
+The following Job Descriptions are missing rubrics:
+- Senior Data Analyst: Logistics & Supply Chain (Category: Data Analytics)
+- Technical Program Manager – Fulfillment & Logistics (Execution Focus) (Category: Program Management)

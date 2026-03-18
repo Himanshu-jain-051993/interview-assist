@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider   = "postgresql"
   url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
 }
 
 model Role {
@@ -48,6 +49,7 @@ model Candidate {
   role               Role        @relation(fields: [role_id], references: [id])
   stage              String
   resume_score       Float?
+  interview_score    Float?
   resume_review_data Json?
   raw_resume_text    String?
   profile_data       Json?
@@ -115,6 +117,7 @@ model InterviewRound {
   interviewer_notes String?
   ai_feedback_json  Json?
   cumulative_score  Float?
+  verdict           String?   // Strong hire, hire, lean hire, leaning no hire, no hire
   created_at        DateTime  @default(now())
   candidate         Candidate @relation(fields: [candidate_id], references: [id], onDelete: Cascade)
   role              Role      @relation(fields: [role_id], references: [id], onDelete: Cascade)

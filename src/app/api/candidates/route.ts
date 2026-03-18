@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
       name: c.name || "Unknown Candidate",
       status: (c.stage || "Applied") as CandidateStatus,
       resume_score: c.resume_score,
+      interview_score: c.interview_score,
       resume_review_data: c.resume_review_data,
       raw_resume_text: c.raw_resume_text,
       profile_data: c.profile_data || {},

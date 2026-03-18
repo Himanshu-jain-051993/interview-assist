@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     // 1. Fetch roles
+    console.log("[GET /api/roles] Fetching roles from Prisma...");
     const rolesData = await prisma.role.findMany({
       include: {
         candidates: {
@@ -16,6 +17,7 @@ export async function GET() {
       },
       orderBy: { created_at: "desc" }
     });
+    console.log(`[GET /api/roles] Found ${rolesData.length} roles.`);
 
     const mappedRoles: Role[] = rolesData.map((r) => {
       const candidates = r.candidates || [];

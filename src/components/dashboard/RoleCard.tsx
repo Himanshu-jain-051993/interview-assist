@@ -64,16 +64,16 @@ export function RoleCard({ role, onEdit, onDelete }: RoleCardProps) {
         </div>
         <CardHeader className="pb-3">
           <div className="flex justify-between items-start gap-3">
-            <CardTitle className="text-xl font-bold text-slate-900 break-words leading-tight flex-1">
+            <CardTitle className="text-base font-bold text-slate-900 break-words leading-tight flex-1 line-clamp-3 min-h-[3rem]">
               {role.title}
             </CardTitle>
-            <Badge variant="outline" className={`${getStatusColor(role.status)} font-bold shrink-0 shadow-sm px-2.5 py-0.5`}>
+            <Badge variant="outline" className={`${getStatusColor(role.status)} font-bold shrink-0 shadow-sm px-2.5 py-0.5 mt-0.5`}>
               {role.status}
             </Badge>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4 mt-2">
+        <CardContent className="pb-4">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-6 mt-2">
             <MetricItem 
               icon={<Users className="w-4 h-4 text-slate-500" />} 
               label="Applied" 
@@ -96,8 +96,9 @@ export function RoleCard({ role, onEdit, onDelete }: RoleCardProps) {
             />
           </div>
         </CardContent>
-        <CardFooter className="pt-0 flex justify-end">
-           <span className="text-xs font-medium text-slate-400">Click to view pipeline ↗</span>
+        <div className="flex-1" /> {/* Spacer to push footer down */}
+        <CardFooter className="pt-0 flex justify-end pb-4">
+           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">View Pipeline ↗</span>
         </CardFooter>
       </Card>
     </Link>

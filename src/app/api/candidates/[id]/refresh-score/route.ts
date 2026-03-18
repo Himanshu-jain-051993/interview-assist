@@ -34,10 +34,15 @@ export async function POST(
       candidate.role.category
     );
 
+    let finalScore = scoringResult.scores.overall_fit_score;
+    if (finalScore > 0 && finalScore <= 4.0) {
+      finalScore = (finalScore / 4) * 100;
+    }
+
     await prisma.candidate.update({
       where: { id: candidate.id },
       data: {
-        resume_score: scoringResult.scores.overall_fit_score,
+        resume_score: finalScore,
         resume_review_data: scoringResult as any,
       },
     });

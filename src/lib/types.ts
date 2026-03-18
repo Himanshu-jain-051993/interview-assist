@@ -37,6 +37,7 @@ export interface Candidate {
   name: string;
   status: CandidateStatus;
   resume_score: number | null;
+  interview_score?: number | null;
   resume_summary?: string | null;
   resume_review_data?: any | null;
   raw_resume_text?: string | null;

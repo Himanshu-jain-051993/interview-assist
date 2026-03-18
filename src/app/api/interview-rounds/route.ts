@@ -10,11 +10,10 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const rounds = await prisma.$queryRaw<any[]>`
-      SELECT * FROM "InterviewRound"
-      WHERE candidate_id = ${candidateId}
-      ORDER BY created_at ASC
-    `;
+    const rounds = await (prisma as any).interviewRound.findMany({
+      where: { candidate_id: candidateId },
+      orderBy: { created_at: "asc" }
+    });
     return NextResponse.json({ rounds });
   } catch (err) {
     console.error("[interview-rounds GET]", err);
@@ -84,6 +83,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const isPlaceholder = !transcriptFile && !notesFile;
+
     const transcriptText = await extractTextFromFile(transcriptFile);
     const interviewerNotes = await extractTextFromFile(notesFile);
 
@@ -94,15 +95,21 @@ export async function POST(req: NextRequest) {
     const role: any = await prisma.role.findUnique({ where: { id: roleId } });
     if (!role) return NextResponse.json({ error: "Role not found" }, { status: 404 });
 
-    const rubrics = await prisma.$queryRaw<any[]>`SELECT * FROM "Rubric" WHERE category = ${role.category}`;
+    const rubrics = await (prisma as any).rubric.findMany({
+      where: { category: role.category }
+    });
 
     // 2. Fetch ALL previous rounds for this candidate (ordered by time) ────
-    const previousRounds = await prisma.$queryRaw<any[]>`
-      SELECT round_type, cumulative_score, ai_feedback_json, created_at
-      FROM "InterviewRound"
-      WHERE candidate_id = ${candidateId}
-      ORDER BY created_at ASC
-    `;
+    const previousRounds = await (prisma as any).interviewRound.findMany({
+      where: { candidate_id: candidateId },
+      select: {
+        round_type: true,
+        cumulative_score: true,
+        ai_feedback_json: true,
+        created_at: true
+      },
+      orderBy: { created_at: "asc" }
+    });
 
     console.log(`[interview-rounds] Evaluating ${roundType} for ${candidate.name}, previous rounds: ${previousRounds.length}`);
 
@@ -116,7 +123,7 @@ export async function POST(req: NextRequest) {
         role,
         rubrics,
         { roundType, transcriptText, interviewerNotes },
-        previousRounds.map((r) => ({
+        previousRounds.map((r: any) => ({
           roundType: r.round_type,
           cumulativeScore: r.cumulative_score,
           aiFeedbackJson: r.ai_feedback_json,
@@ -124,20 +131,54 @@ export async function POST(req: NextRequest) {
         }))
       );
       cumulativeScore = feedback.cumulativeScore ?? feedback.roundScore ?? null;
+      
+      // AI now returns 0-100 directly. 
     }
 
-    // 4. Persist the round ─────────────────────────────────────────────────
+    // 4. Persist the round ────────────────────────────────────────────────────
+    // Only overwrite a prior round of the same type if we have actual transcript data.
+    // Placeholder rounds (no transcript) are always addended as new slots.
+    if (!isPlaceholder) {
+      await (prisma as any).interviewRound.deleteMany({
+        where: { candidate_id: candidateId, round_type: roundType }
+      });
+    }
+
     const roundId = `round_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     const parsedDate = interviewDate ? new Date(interviewDate) : new Date();
     
-    await prisma.$executeRaw`
-      INSERT INTO "InterviewRound"
-        (id, candidate_id, role_id, round_type, transcript_text, interviewer_notes, ai_feedback_json, cumulative_score, created_at, interview_date)
-      VALUES
-        (${roundId}, ${candidateId}, ${roleId}, ${roundType},
-         ${transcriptText || null}, ${interviewerNotes || null},
-         ${feedback ? JSON.stringify(feedback) : null}::jsonb, ${cumulativeScore}, NOW(), ${parsedDate})
-    `;
+    // Fallback Verdict Mapping
+    let verdict = feedback?.verdict || null;
+    if (!verdict && cumulativeScore !== null) {
+      if (cumulativeScore >= 85) verdict = "Strong hire";
+      else if (cumulativeScore >= 70) verdict = "Hire";
+      else if (cumulativeScore >= 55) verdict = "Lean hire";
+      else if (cumulativeScore >= 40) verdict = "Lean no hire";
+      else verdict = "No hire";
+    }
+    
+    await (prisma as any).interviewRound.create({
+      data: {
+        id: roundId,
+        candidate_id: candidateId,
+        role_id: roleId,
+        round_type: roundType,
+        transcript_text: transcriptText || null,
+        interviewer_notes: interviewerNotes || null,
+        ai_feedback_json: feedback ? (feedback as any) : null,
+        cumulative_score: cumulativeScore,
+        verdict: verdict,
+        interview_date: parsedDate
+      }
+    });
+
+    // 5. Update Candidate overall interview score (Already normalized to 100) ─
+    if (cumulativeScore !== null) {
+      await (prisma as any).candidate.update({
+        where: { id: candidateId },
+        data: { interview_score: cumulativeScore }
+      });
+    }
 
     console.log(`[interview-rounds] Round saved: ${roundId}`);
     return NextResponse.json({ round: { id: roundId, roundType, cumulativeScore, aiFeedbackJson: feedback } });
@@ -151,3 +192,23 @@ export async function POST(req: NextRequest) {
   }
 }
 
+
+// ─── PATCH /api/interview-rounds (Rename Round) ──────────────────────────────
+export async function PATCH(req: NextRequest) {
+  try {
+    const { roundId, newRoundType } = await req.json();
+    if (!roundId || !newRoundType) {
+      return NextResponse.json({ error: "roundId and newRoundType are required" }, { status: 400 });
+    }
+
+    await (prisma as any).interviewRound.update({
+      where: { id: roundId },
+      data: { round_type: newRoundType }
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("[interview-rounds PATCH]", err);
+    return NextResponse.json({ error: "Failed to update round name" }, { status: 500 });
+  }
+}
