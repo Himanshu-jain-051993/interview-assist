@@ -550,7 +550,7 @@ export function CandidateActionsDialog({
                         </div>
                       ) : (
                         <div className="space-y-4">
-                          {rounds.map((r) => (
+                          {rounds.map((r: any) => (
                             <div key={r.id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-6 group hover:border-indigo-200/50 transition-all">
                               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${ROUND_COLOR[r.round_type] || "bg-slate-100 text-slate-400"}`}>
                                 <User className="w-5 h-5" />

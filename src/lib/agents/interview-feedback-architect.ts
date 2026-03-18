@@ -32,7 +32,7 @@ export interface PreviousRoundFeedback {
   roundType: string;
   cumulativeScore: number | null;
   aiFeedbackJson: any;
-  createdAt: string;
+  createdAt: Date | string;
 }
 
 export async function evaluateInterviewRound(

@@ -89,9 +89,9 @@ export async function PATCH(
       previousRounds.map((r) => ({
         roundType: r.round_type,
         cumulativeScore: r.cumulative_score,
-        aiFeedbackJson: r.ai_feedback_json,
+        aiFeedbackJson: r.ai_feedback_json as any,
         createdAt: r.created_at,
-      }))
+      })) as any[]
     );
 
     const cumulativeScore = feedback.cumulativeScore ?? feedback.roundScore ?? null;
