@@ -46,6 +46,7 @@ async function safePdfParse(buffer: Buffer): Promise<{ text: string }> {
 }
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 async function extractTextFromFile(file: File | null): Promise<string> {
   if (!file) return "";
