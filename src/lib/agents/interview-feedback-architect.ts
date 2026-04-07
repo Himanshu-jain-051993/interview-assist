@@ -1,26 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const GEMINI_MODEL = "gemini-2.5-flash-lite";
-
-let genAI: GoogleGenerativeAI | null = null;
-let model: any = null;
-
-function getModel() {
-  if (!genAI) {
-    const apiKey = process.env.GOOGLE_AI_API_KEY;
-    if (!apiKey) throw new Error("GOOGLE_AI_API_KEY is not defined");
-    genAI = new GoogleGenerativeAI(apiKey);
-    model = genAI.getGenerativeModel({
-      model: GEMINI_MODEL,
-      generationConfig: { responseMimeType: "application/json" },
-    });
-  }
-  return model;
-}
-
-async function sleep(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
-}
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 
 export interface RoundInput {
   roundType: string;
@@ -42,7 +22,11 @@ export async function evaluateInterviewRound(
   currentRound: RoundInput,
   previousRounds: PreviousRoundFeedback[]
 ): Promise<any> {
-  const mdl = getModel();
+  // Use gemini-2.5-pro for top-quality interview evaluation
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-pro",
+    generationConfig: { responseMimeType: "application/json", temperature: 0 },
+  });
 
   const previousFeedbackText =
     previousRounds.length === 0
@@ -55,7 +39,7 @@ export async function evaluateInterviewRound(
           .join("\n\n---\n\n");
 
   const rubricList = rubrics
-    .map((r) => `- ${r.parameter}: Poor="${r.poor}" | Good="${r.good}" | Strong="${r.strong}"`)
+    .map((r) => `- ${r.parameter}: Poor="${r.poor_level || r.poor || 'N/A'}" | Good="${r.good_level || r.good || 'N/A'}" | Strong="${r.strong_level || r.strong || 'N/A'}"`)
     .join("\n");
 
   const prompt = `
@@ -84,22 +68,15 @@ GOVERNANCE RULES & EDGE-CASE HANDLING:
 
 Rule 1: Attribute-Specific Isolation (Anti-Skewing)
 Human notes MUST only influence the specific rubric parameter they explicitly reference.
-Example: If a note says "Candidate was rude," this heavily weights the Culture Fit or Execution & Stakeholder Orchestration rubric. It is FORBIDDEN to let this sentiment reduce the score for Analytical Rigor or System Architecture if the transcript shows technical mastery.
 
 Rule 2: Conflict Audit (The 70/30 Threshold)
 Apply the 70% human weightage ONLY if the human provides a specific technical or behavioral justification.
-Edge Case (Vague Subjectivity): If an interviewer provides a subjective label (e.g., "proud," "not a fit," "bad vibes") without a supporting transcript example (e.g., interrupting the interviewer, dismissing feedback), the AI must:
-- Assign the 70% weight to the human score.
-- Flag a "Subjectivity Warning": Note that the score is human-skewed and lacks transcript-backed evidence.
-- Maintain the AI's objective evidence-based score as a "Secondary Marker."
 
 Rule 3: Technical Overrule
-If an interviewer notes "Struggled with SQL," but the transcript shows the candidate correctly articulated and solved a complex JOIN or WINDOW FUNCTION, the AI should:
-- Note the human's perception.
-- Maintain a "Good/Strong" rating for the technical skill, citing the transcript as the Ground Truth.
+If transcript evidence contradicts interviewer perception, cite transcript as Ground Truth.
 
 Rule 4: Cumulative Re-Weighting
-If one interviewer is an outlier (highly negative) while three other transcripts show consistent high performance, the AI must highlight the "Outlier Dissonance" in the final summary.
+Highlight outlier interviewers vs. consistent feedback across rounds.
 
 OUTPUT SPECIFICATION (JSON ONLY, NO MARKDOWN, NO CODE BLOCKS):
 {
@@ -117,13 +94,13 @@ OUTPUT SPECIFICATION (JSON ONLY, NO MARKDOWN, NO CODE BLOCKS):
     {
       "parameter": "Fetched from ROLE RUBRICS",
       "grade": "Poor | Borderline | Good | Strong",
-      "score": 1-4,
-      "aiEvidence": "Specific quote or paraphrase from the transcript proving technical/strategic depth for this parameter.",
-      "justification": "Explain EXACTLY why this score was given. State clearly: (1) what the candidate demonstrated that prevented a lower score, and (2) what was missing or insufficient that prevented a higher score. Be specific and reference the rubric criteria.",
+      "score": 1, // MUST BE AN INTEGER 1 TO 4 (1=Poor, 2=Borderline, 3=Good, 4=Strong)
+      "aiEvidence": "Specific quote or paraphrase from the transcript.",
+      "justification": "Explain EXACTLY why this score was given.",
       "interviewerInfluence": "How much the human notes shifted this specific grade.",
-      "conflictAudit": "Mandatory if the AI evidence is 'Strong' but the Human note is 'Poor'. Explain why the final grade landed where it did.",
+      "conflictAudit": "Mandatory if AI evidence is Strong but Human note is Poor.",
       "subjectivityWarning": true,
-      "secondaryMarkerScore": 1-4
+      "secondaryMarkerScore": 1 // MUST BE AN INTEGER 1 TO 4
     }
   ]
 }
@@ -142,21 +119,20 @@ Choose the verdict that EXACTLY matches the cumulativeScore.
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       console.log(`[FeedbackArchitect] Attempt ${attempt}/${MAX_RETRIES} — ${currentRound.roundType} for ${candidate.name}`);
-      const result = await mdl.generateContent(prompt);
+      const result = await model.generateContent(prompt);
       const text = result.response.text();
       console.log(`[FeedbackArchitect] Response received, length: ${text.length}`);
-      // Clean markdown if present - be more aggressive with JSON extraction
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       const cleanJson = jsonMatch ? jsonMatch[0] : text.replace(/```json\n?|```/g, "").trim();
       return JSON.parse(cleanJson);
     } catch (err: any) {
       const msg: string = err?.message ?? "Unknown error";
-      const is429 = msg.includes("429") || msg.includes("Too Many Requests") || msg.includes("RESOURCE_EXHAUSTED");
-      if (is429 && attempt < MAX_RETRIES) {
+      const isRateLimit = msg.includes("429") || msg.includes("Too Many Requests") || msg.includes("RESOURCE_EXHAUSTED");
+      if (isRateLimit && attempt < MAX_RETRIES) {
         const retryMatch = msg.match(/retry in (\d+(?:\.\d+)?)s/i);
         const waitSec = retryMatch ? Math.ceil(parseFloat(retryMatch[1])) : 30;
         console.log(`[FeedbackArchitect] Rate limited. Waiting ${waitSec}s…`);
-        await sleep(waitSec * 1000);
+        await new Promise(r => setTimeout(r, waitSec * 1000));
         continue;
       }
       throw new Error(`AI Evaluation failed: ${msg}`);
@@ -164,4 +140,3 @@ Choose the verdict that EXACTLY matches the cumulativeScore.
   }
   throw new Error("Max retries exceeded.");
 }
-

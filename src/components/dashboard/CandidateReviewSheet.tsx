@@ -71,7 +71,8 @@ interface CandidateReviewSheetProps {
   onClose: () => void;
   onRefresh: (force?: boolean) => void;
   onRefreshReview?: () => void;
-  onStatusChange?: (newStatus: "Applied" | "Screening" | "Shortlisted" | "Interview" | "Rejected") => void;
+  onCandidateUpdate?: (candidateId: string) => void;
+  onStageChange?: (newStage: "Applied" | "Screening" | "Shortlisted" | "Interview" | "Interview Scheduled" | "Rejected") => void;
   initialTab?: string;
 }
 
@@ -96,9 +97,9 @@ const categoryMeta: Record<string, { description: string }> = {
 };
 
 const getScoreLabel = (score: number) => {
-  if (score >= 3.5) return "Strong";
-  if (score >= 2.5) return "Good";
-  if (score >= 1.5) return "Borderline";
+  if (score >= 3.6) return "Strong";
+  if (score >= 2.6) return "Good";
+  if (score >= 1.6) return "Borderline";
   return "Poor";
 };
 
@@ -120,6 +121,18 @@ const getVerdictBadgeClass = (verdict: string | null) => {
   return "bg-slate-100 text-slate-800 border-slate-200";
 };
 
+const getScoreColor = (score: number) => {
+  if (score >= 80) return "text-emerald-600";
+  if (score >= 60) return "text-amber-600";
+  return "text-rose-600";
+};
+
+const getScoreBgColor = (score: number) => {
+  if (score >= 80) return "bg-emerald-500";
+  if (score >= 60) return "bg-amber-500";
+  return "bg-rose-500";
+};
+
 export function CandidateReviewSheet({
   candidate,
   guideData,
@@ -128,7 +141,8 @@ export function CandidateReviewSheet({
   onClose,
   onRefresh,
   onRefreshReview,
-  onStatusChange,
+  onCandidateUpdate,
+  onStageChange,
   initialTab = "analysis",
 }: CandidateReviewSheetProps) {
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -197,7 +211,9 @@ export function CandidateReviewSheet({
       if (!res.ok) throw new Error("Delete failed");
       toast.success("Round deleted");
       fetchRounds();
-      onRefreshReview?.();
+      if (candidate && onCandidateUpdate) {
+        onCandidateUpdate(candidate.id);
+      }
     } catch (err) {
       toast.error("Failed to delete round");
     }
@@ -232,7 +248,9 @@ export function CandidateReviewSheet({
       setFeedbackFile(null);
       setShowAddRoundForm(false);
       fetchRounds();
-      onRefreshReview?.();
+      if (candidate && onCandidateUpdate) {
+        onCandidateUpdate(candidate.id);
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to evaluate interview");
     } finally {
@@ -266,8 +284,8 @@ export function CandidateReviewSheet({
               <div className="min-w-0">
                 <div className="flex items-center gap-3">
                   <DialogTitle className="text-xl font-black text-slate-900 leading-none">{candidate.name}</DialogTitle>
-                  <Select value={candidate.status as any} onValueChange={(val: any) => onStatusChange?.(val)}>
-                    <SelectTrigger className={`h-6 w-fit px-3 text-[9px] font-black uppercase tracking-wider border rounded-full ${getStatusBadgeClass(candidate.status)}`}>
+                  <Select value={candidate.stage as any} onValueChange={(val: any) => onStageChange?.(val)}>
+                    <SelectTrigger className={`h-6 w-fit px-3 text-[9px] font-black uppercase tracking-wider border rounded-full ${getStatusBadgeClass(candidate.stage)}`}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-white border-slate-200 shadow-xl">
@@ -286,25 +304,6 @@ export function CandidateReviewSheet({
 
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-6 pr-6 border-r border-slate-100 hidden sm:flex">
-                {candidate.interview_score !== null && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger render={<div className="text-right cursor-help" />}>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Interview Flow</p>
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg font-black text-violet-600 leading-none">{Math.round(candidate.interview_score || 0)}%</span>
-                          <Progress value={candidate.interview_score || 0} className="w-16 h-1.5 bg-violet-100" />
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="w-64 bg-slate-900 border-slate-800 text-white p-3 rounded-xl shadow-2xl">
-                        <p className="text-[11px] font-bold uppercase tracking-widest text-indigo-400 mb-1">How is this calculated?</p>
-                        <p className="text-[10px] text-slate-200 leading-relaxed space-y-2">
-                          <span>The interview score (0–100) is a weighted average of performance across all rounds.</span>
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
                 <div className="text-right">
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Resume Fit</p>
                   <div className="flex items-center gap-2">
@@ -312,18 +311,37 @@ export function CandidateReviewSheet({
                     <Progress value={candidate.resume_score || 0} className="w-16 h-1.5" />
                   </div>
                 </div>
+                {candidate.interview_score !== null && candidate.interview_score !== undefined && (
+                  <div className="text-right">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Interview Score</p>
+                    <div className="flex flex-col items-end gap-1 mt-1">
+                      <span className={`text-lg font-black leading-none ${getScoreColor(candidate.interview_score)}`}>{Math.round(candidate.interview_score || 0)}%</span>
+                      <div className="h-1 w-16 bg-slate-100 rounded-full overflow-hidden">
+                         <div 
+                           className={`h-full transition-all ${getScoreBgColor(candidate.interview_score)}`} 
+                           style={{ width: `${candidate.interview_score}%` }} 
+                         />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {activeTab === "guide" && (
-                <Button variant="outline" className="border-indigo-100 text-indigo-600 hover:bg-indigo-50 font-bold text-[10px] uppercase tracking-widest px-4 h-9 rounded-xl transition-all" onClick={() => onRefresh(true)} disabled={isRefreshing}>
+                <Button 
+                  variant="outline" 
+                  className="border-indigo-100 text-indigo-600 hover:bg-indigo-50 font-bold text-[10px] uppercase tracking-widest px-4 h-9 rounded-xl transition-all"
+                  onClick={() => onRefresh(true)}
+                  disabled={isRefreshing}
+                >
                   <Zap className={`w-3 h-3 mr-2 ${isRefreshing ? 'animate-pulse' : 'fill-current'}`} />
                   {isRefreshing ? 'Regenerating...' : 'Regenerate Guide'}
                 </Button>
               )}
 
-              <DialogClose render={<Button variant="ghost" size="icon" className="text-slate-400 hover:bg-slate-50 rounded-xl h-9 w-9 p-0 transition-all hover:rotate-90" />}>
+              <Button variant="ghost" size="icon" className="text-slate-400 hover:bg-slate-100 rounded-full h-8 w-8 p-0" onClick={onClose}>
                 <XIcon className="w-5 h-5" />
-              </DialogClose>
+              </Button>
             </div>
           </div>
         </DialogHeader>
@@ -437,17 +455,41 @@ export function CandidateReviewSheet({
                         ))}
                       </div>
                     </section>
+
+                    <section>
+                      <div className="flex items-center gap-2 mb-4"><Star className="w-4 h-4 text-indigo-500 fill-indigo-500" /><h3 className="text-sm font-black uppercase tracking-widest text-slate-800">Domain Alignment</h3></div>
+                      <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm divide-y divide-slate-100 overflow-hidden">
+                        {(review?.role_specific_rubric_scores || []).length === 0 ? <div className="px-5 py-8 text-center text-slate-400 italic text-[11px]">No domain-specific scores found.</div> : 
+                          review.role_specific_rubric_scores.map((s: any, i: number) => (
+                            <div key={i} className="px-5 py-4 flex items-center justify-between group hover:bg-slate-50 transition-colors">
+                              <div className="min-w-0 pr-4"><p className="text-[11px] font-bold text-slate-800 truncate mb-1">{s.rubric || s.parameter}</p><p className="text-[12px] text-slate-500 leading-relaxed font-medium">{s.justification}</p></div>
+                              <Badge variant="outline" className={`${getScoreBadgeClass(s.score)} font-black text-[10px] uppercase tracking-widest shrink-0 px-3 py-1 rounded-lg`}>{getScoreLabel(s.score)}</Badge>
+                            </div>
+                        ))}
+                      </div>
+                    </section>
                   </div>
                 )}
               </div>
             </TabsContent>
 
             <TabsContent value="guide" className="h-full m-0 outline-none flex flex-col">
-               {isRefreshing && !guideData ? (
-                 <div className="flex-1 flex flex-col items-center justify-center h-[500px] gap-4 bg-white m-8 rounded-3xl border border-slate-100"><Loader2 className="w-8 h-8 text-indigo-500 animate-spin" /><p className="text-xs font-black text-slate-900 uppercase tracking-widest">Generating interview guide</p></div>
-               ) : !["Interview", "Interview Scheduled"].includes(candidate.status) ? (
-                 <div className="flex flex-col items-center justify-center py-20 bg-amber-50/30 m-8 rounded-3xl border border-dashed border-amber-200 px-6"><Info className="w-6 h-6 text-amber-600 mb-4" /><h3 className="text-xs font-black text-amber-900 uppercase tracking-widest mb-2">Stage Update Required</h3><p className="text-[11px] text-amber-700/80 text-center max-w-sm leading-relaxed">Please set the candidate stage to <strong>"Interview"</strong> to generate the interview guide.</p></div>
-               ) : categories.length > 0 ? (
+              {isRefreshing && !guideData ? (
+                <div className="flex-1 flex flex-col items-center justify-center h-[500px] gap-4 bg-white m-8 rounded-3xl border border-slate-100">
+                  <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+                  <p className="text-xs font-black text-slate-900 uppercase tracking-widest">Generating interview guide</p>
+                </div>
+              ) : candidate.stage !== "Interview" ? (
+                <div className="flex flex-col items-center justify-center py-20 bg-amber-50/30 m-8 rounded-3xl border border-dashed border-amber-200 px-6">
+                  <div className="h-12 w-12 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-600 mb-4">
+                    <Info className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-xs font-black text-amber-900 uppercase tracking-widest mb-2">Stage Update Required</h3>
+                  <p className="text-[11px] text-amber-700/80 text-center max-w-sm leading-relaxed">
+                    Please set the candidate stage to <strong>"Interview"</strong> to generate the interview guide.
+                  </p>
+                </div>
+              ) : guideData ? (
                  <Tabs defaultValue={categories[0].category} className="flex-1 flex flex-col h-full bg-slate-50/30">
                     <div className="px-10 pt-8 shrink-0"><TabsList className="justify-start h-10 w-fit gap-1 bg-slate-100 p-1 rounded-xl">{categories.map(cat => (<TabsTrigger key={cat.category} value={cat.category} className="px-5 text-[10px] uppercase font-black tracking-widest rounded-lg data-[state=active]:bg-white data-[state=active]:text-indigo-600 transition-all">{cat.category}<Badge className="ml-2 h-4 w-4 p-0 flex items-center justify-center bg-slate-200 text-slate-600 rounded-full text-[9px] font-bold">{cat.questions.length}</Badge></TabsTrigger>))}</TabsList></div>
                     <div className="flex-1 overflow-y-auto">{categories.map(cat => (<TabsContent key={cat.category} value={cat.category} className="m-0 p-8 space-y-6"><div className="space-y-4">{cat.questions.map((q, idx) => (<div key={idx} className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden"><div className="px-6 py-5 flex items-start gap-4 border-b border-slate-50"><div className="h-6 w-6 rounded-full bg-slate-100 text-[11px] font-black text-slate-500 flex items-center justify-center shrink-0">{idx + 1}</div><p className="text-[14px] font-bold text-slate-800 leading-snug pt-0.5">{q.question}</p></div><div className="grid grid-cols-2 divide-x divide-slate-100 bg-slate-50/30"><div className="p-5"><TrendingUp className="w-3.5 h-3.5 text-emerald-600 mb-2" /><p className="text-xs text-slate-600 leading-relaxed">{q.lookFor.strong}</p></div><div className="p-5"><TrendingDown className="w-3.5 h-3.5 text-rose-500 mb-2" /><p className="text-xs text-slate-600 leading-relaxed">{q.lookFor.poor}</p></div></div></div>))}</div></TabsContent>))}</div>
@@ -616,7 +658,7 @@ export function CandidateReviewSheet({
                 )}
 
                 {/* Interviews so far Section */}
-                {rounds.length > 1 && (
+                {rounds.length > 0 && (
                   <div className="bg-white rounded-[2rem] p-10 border border-slate-100 shadow-xl shadow-slate-100/50 relative overflow-hidden group">
                     <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 to-transparent" />
                     <div className="relative flex flex-col md:flex-row items-center justify-between gap-10">
@@ -632,6 +674,14 @@ export function CandidateReviewSheet({
                         <p className="text-sm text-slate-600 font-medium leading-relaxed italic">
                           {(candidate.profile_data as any)?.interview_summary || "Analyzing interview signals to generate a cumulative narrative..." }
                         </p>
+                        <div className="pt-6 mt-2 border-t border-slate-100 flex flex-wrap items-center gap-x-6 gap-y-2">
+                           <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Decision Guide:</span>
+                           <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /><span className="text-[10px] font-bold text-slate-500">Strong (85%+)</span></div>
+                           <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-green-500" /><span className="text-[10px] font-bold text-slate-500">Hire (70-84%)</span></div>
+                           <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-blue-500" /><span className="text-[10px] font-bold text-slate-500">Lean Hire (55-69%)</span></div>
+                           <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-orange-500" /><span className="text-[10px] font-bold text-slate-500">Lean No Hire (40-54%)</span></div>
+                           <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-rose-500" /><span className="text-[10px] font-bold text-slate-500">No Hire (&lt;40%)</span></div>
+                        </div>
                       </div>
                       <div className="flex flex-col items-center gap-2 shrink-0">
                         <div className="relative h-32 w-32 outline outline-offset-4 outline-slate-50 rounded-full">
@@ -705,6 +755,9 @@ export function CandidateReviewSheet({
                             Start Your First Round Analysis
                           </Button>
                        </div>
+                       <div className="text-center italic text-slate-400 text-[10px]">
+                          Use the <strong>"Analysis Cockpit"</strong> to upload transcripts and feedback.
+                        </div>
                     </div>
                   </div>
                 ) : (
@@ -735,7 +788,13 @@ export function CandidateReviewSheet({
                               {round.ai_feedback_json.rubricEvaluations && (
                                 <div className="grid grid-cols-1 gap-4">
                                   {round.ai_feedback_json.rubricEvaluations.map((evalItem: any, i: number) => (
-                                    <div key={i} className="bg-white rounded-2xl p-5 border border-slate-100"><div className="flex items-center justify-between mb-4"><p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">{evalItem.parameter}</p><Badge variant="outline" className={`${getScoreBadgeClass(evalItem.score)} font-black text-[10px] border-none`}>{evalItem.score}/4</Badge></div><div className="grid grid-cols-2 gap-8"><div><TrendingUp className="w-3 h-3 text-emerald-500 mb-2" /><p className="text-[12px] text-slate-600 leading-relaxed">{evalItem.aiEvidence}</p></div><div><Sparkles className="w-3 h-3 text-indigo-500 mb-2" /><p className="text-[12px] text-slate-600 leading-relaxed">{evalItem.justification}</p></div></div></div>
+                                    <div key={i} className="bg-white rounded-2xl p-5 border border-slate-100">
+                                      <div className="flex items-center justify-between mb-4">
+                                        <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">{evalItem.parameter}</p>
+                                        <Badge variant="outline" className={`${getScoreBadgeClass(evalItem.score)} font-black text-[10px] border-none uppercase tracking-widest px-3`}>
+                                          {getScoreLabel(evalItem.score)}
+                                        </Badge>
+                                      </div><div className="grid grid-cols-2 gap-8"><div><TrendingUp className="w-3 h-3 text-emerald-500 mb-2" /><p className="text-[12px] text-slate-600 leading-relaxed">{evalItem.aiEvidence}</p></div><div><Sparkles className="w-3 h-3 text-indigo-500 mb-2" /><p className="text-[12px] text-slate-600 leading-relaxed">{evalItem.justification}</p></div></div></div>
                                   ))}
                                 </div>
                               )}

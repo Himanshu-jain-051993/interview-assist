@@ -23,48 +23,8 @@ export async function GET(req: NextRequest) {
 }
 
 import mammoth from "mammoth";
-// Fix for DOMMatrix undefined error in pdf-parse on Next.js Serverless
-if (typeof global.DOMMatrix === 'undefined') {
-  (global as any).DOMMatrix = function() {};
-}
-if (typeof global.Path2D === 'undefined') {
-  (global as any).Path2D = function() {};
-}
+import { safePdfParse } from "@/lib/pdf-utils";
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdf = require("pdf-parse");
-
-async function safePdfParse(buffer: Buffer): Promise<{ text: string }> {
-  try {
-    const pdfLib = require("pdf-parse");
-    // Handle the specific export of pdf-parse v2.4.5+ (Mehmet Kozan version)
-    const ParserClass = pdfLib.PDFParse || (pdfLib.default && pdfLib.default.PDFParse);
-    
-    if (ParserClass) {
-      console.log("[safePdfParse] Using PDFParse class");
-      const instance = new ParserClass({ data: buffer });
-      const data = await instance.getText();
-      await instance.destroy();
-      return data || { text: "" };
-    }
-    
-    // Fallback to legacy functional style if it exists
-    if (typeof pdfLib === 'function') {
-      console.log("[safePdfParse] Using legacy function style");
-      return pdfLib(buffer);
-    }
-    
-    if (typeof pdfLib.default === 'function') {
-      console.log("[safePdfParse] Using legacy default function style");
-      return pdfLib.default(buffer);
-    }
-
-    throw new Error("pdf-parse library error: No valid parsing method found in " + Object.keys(pdfLib).join(", "));
-  } catch (err) {
-    console.error("[safePdfParse] Error:", err);
-    throw err;
-  }
-}
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -137,14 +97,45 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Role not found" }, { status: 404 });
     }
 
-    console.log(`[interview-rounds] Fetching rubrics for category: ${role.category}`);
-    const rubrics = await (prisma as any).rubric.findMany({
-      where: { category: role.category }
-    });
+    const { Pool } = require('pg');
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const rubricResult = await pool.query(
+      `SELECT * FROM "Rubric" WHERE category ILIKE $1 AND type ILIKE 'INTERVIEW'`,
+      [role.category.trim()]
+    );
+    await pool.end();
+    const rubrics = rubricResult.rows;
     
+    let interviewRubrics = [];
     if (rubrics.length === 0) {
-      console.warn(`[interview-rounds] Missing Rubrics: category ${role.category}`);
-      return NextResponse.json({ error: `No rubrics found for category "${role.category}". Ensure data is seeded.` }, { status: 400 });
+      console.warn(`[interview-rounds] Missing INTERVIEW Rubrics for category ${role.category}. Checking JSON fallback...`);
+      
+      const fs = require('fs');
+      const path = require('path');
+      const rubricsPath = path.join(process.cwd(), 'data', 'resume_rubrics.json');
+      const rubricsData = JSON.parse(fs.readFileSync(rubricsPath, 'utf8'));
+      const mapping: Record<string, string> = {
+        "product_management": "product_manager",
+        "software_engineering": "software_engineer",
+        "data_analytics": "data_analyst",
+        "program_management": "technical_program_manager",
+        "ai_product_management": "ai_product_manager",
+      };
+      const rawKey = role.category.toLowerCase().replace(/\s+/g, "_");
+      const roleKey = mapping[rawKey] || rawKey;
+      const staticEntry = rubricsData.role_specific_rubrics[roleKey];
+      
+      if (staticEntry?.interview) {
+        interviewRubrics = staticEntry.interview;
+      } else {
+        const fallback = await (prisma as any).rubric.findMany({ where: { category: role.category } });
+        if (fallback.length === 0) {
+          return NextResponse.json({ error: `No rubrics found for category "${role.category}" in DB or JSON.` }, { status: 400 });
+        }
+        interviewRubrics = fallback;
+      }
+    } else {
+      interviewRubrics = rubrics;
     }
 
     // 2. Fetch ALL previous rounds for this candidate (ordered by time) ────
@@ -170,7 +161,7 @@ export async function POST(req: NextRequest) {
         feedback = await evaluateInterviewRound(
           candidate,
           role,
-          rubrics,
+          interviewRubrics,
           { roundType, transcriptText, interviewerNotes },
           previousRounds.map((r: any) => ({
             roundType: r.round_type,

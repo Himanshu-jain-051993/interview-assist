@@ -3,26 +3,8 @@ import { prisma } from "@/lib/prisma";
 import mammoth from "mammoth";
 import { evaluateInterviewRound } from "@/lib/agents/interview-feedback-architect";
 
-if (typeof global.DOMMatrix === "undefined") {
-  (global as any).DOMMatrix = function() {};
-}
-if (typeof global.Path2D === "undefined") {
-  (global as any).Path2D = function() {};
-}
+import { safePdfParse } from "@/lib/pdf-utils";
 
-const pdf = require("pdf-parse");
-
-async function safePdfParse(buffer: Buffer): Promise<{ text: string }> {
-  if (typeof pdf === 'function') return pdf(buffer);
-  if (pdf.PDFParse) {
-    const instance = new pdf.PDFParse({ data: buffer });
-    const data = await instance.getText();
-    await instance.destroy();
-    return data || { text: "" };
-  }
-  if (pdf.default) return pdf.default(buffer);
-  throw new Error("pdf-parse library error: No valid parsing function found.");
-}
 
 export const runtime = "nodejs";
 

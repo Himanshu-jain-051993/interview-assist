@@ -29,6 +29,7 @@ model Role {
 model Rubric {
   id         String   @id @default(cuid())
   category   String
+  type       String   @default("RESUME") // RESUME | INTERVIEW
   parameter  String
   poor       String
   borderline String?
@@ -37,7 +38,7 @@ model Rubric {
   content_embedding Unsupported("vector(3072)")?
   created_at        DateTime @default(now())
 
-  @@unique([category, parameter])
+  @@unique([category, type, parameter])
 }
 
 model Candidate {

@@ -24,7 +24,7 @@
       "id": "cand-1",
       "roleId": "role-1",
       "name": "Alex Rivera",
-      "status": "Shortlisted",
+      "stage": "Shortlisted",
       "resume_score": 92,
       "resume_summary": "Strong product leadership background with experience in scaling SaaS products. Expert in user lifecycle management.",
       "profile_data": {
@@ -51,7 +51,7 @@
       "id": "cand-2",
       "roleId": "role-1",
       "name": "Jordan Smith",
-      "status": "Applied",
+      "stage": "Applied",
       "resume_score": 78,
       "resume_summary": "Experienced project manager transitioning to product. Strong operational focus.",
       "profile_data": {

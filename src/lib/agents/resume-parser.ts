@@ -1,8 +1,9 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 
 export async function parseResume(text: string) {
+  // gemini-2.5-flash is ideal for fast structured extraction
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const prompt = `
@@ -26,8 +27,10 @@ export async function parseResume(text: string) {
   const result = await model.generateContent(prompt);
   let responseText = result.response.text().trim();
   
-  if (responseText.startsWith('\`\`\`json')) {
-    responseText = responseText.replace(/^\`\`\`json\n?/, '').replace(/\n?\`\`\`$/, '');
+  if (responseText.startsWith('```json')) {
+    responseText = responseText.replace(/^```json\n?/, '').replace(/\n?```$/, '');
+  } else if (responseText.startsWith('```')) {
+    responseText = responseText.replace(/^```\n?/, '').replace(/\n?```$/, '');
   }
 
   try {
@@ -37,4 +40,3 @@ export async function parseResume(text: string) {
     throw new Error('Failed to parse Resume from Gemini');
   }
 }
-

@@ -4,18 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { evaluateInterviewRound } from "@/lib/agents/interview-feedback-architect";
 import mammoth from "mammoth";
 
-// Fix for DOMMatrix undefined error in pdf-parse on Next.js Serverless
-if (typeof global.DOMMatrix === 'undefined') { (global as any).DOMMatrix = function() {}; }
-if (typeof global.Path2D === 'undefined') { (global as any).Path2D = function() {}; }
+import { safePdfParse } from "@/lib/pdf-utils";
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdf = require("pdf-parse");
-
-async function safePdfParse(buffer: Buffer): Promise<{ text: string }> {
-  if (typeof pdf === 'function') return pdf(buffer);
-  if (pdf.default) return pdf.default(buffer);
-  return { text: "" };
-}
 
 async function extractTextFromFile(file: File | null): Promise<string> {
   if (!file) return "";

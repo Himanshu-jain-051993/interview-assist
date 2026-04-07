@@ -2,6 +2,30 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { generateInterviewGuide } from "@/lib/agents/interview-architect";
 
+export async function GET(req: NextRequest) {
+  try {
+    const url = new URL(req.url);
+    const candidateId = url.searchParams.get("candidateId");
+    const roleId = url.searchParams.get("roleId");
+
+    if (!candidateId || !roleId) {
+      return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
+    }
+
+    const existing = await prisma.interviewGuide.findUnique({
+      where: { candidate_id_role_id: { candidate_id: candidateId, role_id: roleId } }
+    });
+
+    if (existing) {
+      return NextResponse.json(existing.guide_data);
+    }
+    
+    return NextResponse.json({ exists: false }, { status: 404 });
+  } catch (error) {
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { candidateId, roleId, force = false } = await req.json();

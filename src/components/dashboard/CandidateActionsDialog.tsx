@@ -82,10 +82,10 @@ interface InterviewRound {
 
 interface CandidateActionsDialogProps {
   candidate: Candidate | null;
-  currentStatus: CandidateStatus;
+  currentStage: CandidateStatus;
   isOpen: boolean;
   onClose: () => void;
-  onStatusChange: (id: string, status: CandidateStatus) => void;
+  onStageChange: (id: string, stage: CandidateStatus) => void;
   onCandidateUpdate: (c: Candidate) => void;
   onOpenGuide: (c: Candidate) => void;
 }
@@ -206,15 +206,15 @@ function ScheduleRoundForm({
 
 export function CandidateActionsDialog({
   candidate: initialCandidate,
-  currentStatus,
+  currentStage,
   isOpen,
   onClose,
-  onStatusChange,
+  onStageChange,
   onCandidateUpdate,
   onOpenGuide,
 }: CandidateActionsDialogProps) {
   const [candidate, setCandidate] = useState<Candidate | null>(initialCandidate);
-  const [status, setStatus] = useState<CandidateStatus>(currentStatus);
+  const [stage, setStage] = useState<CandidateStatus>(currentStage);
   const [rounds, setRounds] = useState<InterviewRound[]>([]);
   const [guideData, setGuideData] = useState<any>(null);
   const [isLoadingGuide, setIsLoadingGuide] = useState(false);
@@ -225,8 +225,8 @@ export function CandidateActionsDialog({
 
   useEffect(() => { 
     setCandidate(initialCandidate);
-    setStatus(currentStatus); 
-  }, [initialCandidate, currentStatus]);
+    setStage(currentStage); 
+  }, [initialCandidate, currentStage]);
 
   const fetchRounds = async () => {
     if (!candidate) return;
@@ -287,21 +287,21 @@ export function CandidateActionsDialog({
     }
   }, [isOpen, candidate?.id]);
 
-  const handleStatusChange = async (newStatus: CandidateStatus) => {
+  const handleStageChange = async (newStage: CandidateStatus) => {
     if (!candidate) return;
-    const prev = status;
-    setStatus(newStatus);
+    const prev = stage;
+    setStage(newStage);
     try {
       const res = await fetch(`/api/candidates/${candidate.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ stage: newStage }),
       });
       if (!res.ok) throw new Error("Update failed");
-      onStatusChange(candidate.id, newStatus);
-      toast.success(`Candidate moved to ${newStatus}`);
+      onStageChange(candidate.id, newStage);
+      toast.success(`Candidate moved to ${newStage}`);
     } catch {
-      setStatus(prev);
+      setStage(prev);
       toast.error("Failed to update status");
     }
   };
@@ -352,8 +352,8 @@ export function CandidateActionsDialog({
                   {candidate.name}
                 </DialogTitle>
                 <div className="flex items-center gap-3">
-                  <Badge className={`font-bold text-[10px] uppercase tracking-wider py-1 px-3 ${STAGE_COLORS[status] || "bg-slate-100"}`}>
-                    {status}
+                  <Badge className={`font-bold text-[10px] uppercase tracking-wider py-1 px-3 ${STAGE_COLORS[stage] || "bg-slate-100"}`}>
+                    {stage}
                   </Badge>
                   {candidate.resume_score !== null && (
                     <Badge variant="outline" className="text-[10px] border-slate-200 font-black text-indigo-600 bg-indigo-50/30 px-3">
@@ -365,7 +365,7 @@ export function CandidateActionsDialog({
 
               <div className="flex flex-col items-end gap-1.5">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pipeline Status</span>
-                <Select value={status} onValueChange={(v: any) => v && handleStatusChange(v)}>
+                <Select value={stage} onValueChange={(v: any) => v && handleStageChange(v)}>
                   <SelectTrigger className="h-10 text-xs border-slate-200 w-48 font-bold bg-slate-50 hover:bg-white transition-colors">
                     <SelectValue />
                   </SelectTrigger>

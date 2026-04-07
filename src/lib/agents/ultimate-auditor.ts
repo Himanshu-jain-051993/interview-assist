@@ -46,12 +46,30 @@ export async function performMasterAudit(
   const rawKey = roleCategory.toLowerCase().replace(/\s+/g, "_");
   const roleKey = mapping[rawKey] || rawKey;
   
-  // 🔍 DYNAMIC RUBRIC FETCH
-  // We first try to get rubrics from the database (for dynamic roles like Category Manager)
-  // If not found, we fallback to the static JSON file
-  const dbRubrics = await (prisma as any).rubric.findMany({
-    where: { category: roleCategory }
-  });
+  // 🔍 DYNAMIC RUBRIC FETCH — use raw SQL ILIKE to avoid case-mismatch failures
+  const { Pool } = require('pg');
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  let dbRubrics: any[] = [];
+  try {
+    const result = await pool.query(
+      `SELECT * FROM "Rubric" WHERE category ILIKE $1 AND type ILIKE 'RESUME'`,
+      [roleCategory.trim()]
+    );
+    // Map DB rows to match the expected JSON structure (name instead of parameter)
+    dbRubrics = result.rows.map(row => ({
+      id: row.id,
+      name: row.parameter,
+      description: row.description || "",
+      levels: {
+        poor: row.poor_level,
+        borderline: row.borderline_level,
+        good: row.good_level,
+        strong: row.strong_level
+      }
+    }));
+  } finally {
+    await pool.end();
+  }
 
   let roleRubricsData = [];
   if (dbRubrics && dbRubrics.length > 0) {
@@ -59,7 +77,8 @@ export async function performMasterAudit(
     roleRubricsData = dbRubrics;
   } else {
     console.log(`[Auditor] Category "${roleCategory}" not in DB. Falling back to static JSON...`);
-    roleRubricsData = rubricsData.role_specific_rubrics[roleKey] || [];
+    const staticEntry = rubricsData.role_specific_rubrics[roleKey];
+    roleRubricsData = staticEntry?.resume || (Array.isArray(staticEntry) ? staticEntry : []);
   }
 
   const roleRubrics = JSON.stringify(roleRubricsData, null, 2);
@@ -123,19 +142,9 @@ STRICT RULE: Only return valid JSON. No markdown fences. No preamble.
       text = text.replace(/```json|```/g, "").trim();
     }
     
-    try {
-      const parsed = JSON.parse(text);
-      // Ensure the scores key exists even if AI missed it
-      if (!parsed.analysis) parsed.analysis = {};
-      if (!parsed.analysis.scores) parsed.analysis.scores = { overall_fit_score: 50 };
-      return parsed;
-    } catch (err) {
-      console.error("[Auditor] JSON Parse Error:", text.substring(0, 500));
-      // Fallback object to prevent pipeline crash
-      return {
-        profile: { name: "Extracted Candidate", email: `fallback-${Date.now()}@example.com`, summary: "", experience: [], education: [] },
-        analysis: { resume_summary: "Parsing failed", hiring_thesis: "", universal_rubric_scores: [], role_specific_rubric_scores: [], scores: { overall_fit_score: 1.0 } }
-      } as any;
-    }
+    const parsed = JSON.parse(text);
+    if (!parsed.analysis) parsed.analysis = {};
+    if (!parsed.analysis.scores) parsed.analysis.scores = { overall_fit_score: 1.0 };
+    return parsed;
   });
 }

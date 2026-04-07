@@ -63,192 +63,156 @@
     }
   ],
   "role_specific_rubrics": {
-    "product_manager": [
-      {
-        "id": "product_strategy",
-        "name": "Product Strategy Ownership",
-        "description": "Measures the candidate’s ownership of product direction and strategic planning.",
-        "levels": {
-          "poor": "No ownership of product roadmap or strategic planning; mostly execution tasks.",
-          "borderline": "Some involvement in roadmap discussions but limited ownership.",
-          "good": "Owns roadmap decisions and prioritization aligned with business goals.",
-          "strong": "Defines multi-quarter product strategy with measurable business outcomes."
+    "product_manager": {
+      "resume": [
+        {
+          "id": "product_strategy",
+          "name": "Product Strategy Ownership",
+          "description": "Measures the candidate’s ownership of product direction and strategic planning.",
+          "levels": {
+            "poor": "No ownership of product roadmap or strategic planning; mostly execution tasks.",
+            "borderline": "Some involvement in roadmap discussions but limited ownership.",
+            "good": "Owns roadmap decisions and prioritization aligned with business goals.",
+            "strong": "Defines multi-quarter product strategy with measurable business outcomes."
+          }
+        },
+        {
+          "id": "product_execution",
+          "name": "Product Delivery & Execution",
+          "description": "Measures ability to deliver products or features successfully.",
+          "levels": {
+            "poor": "No evidence of shipping products or features.",
+            "borderline": "Participation in launches without clear ownership.",
+            "good": "Delivered multiple features or products with measurable adoption.",
+            "strong": "Led complex product launches with significant business impact."
+          }
         }
-      },
-      {
-        "id": "product_execution",
-        "name": "Product Delivery & Execution",
-        "description": "Measures ability to deliver products or features successfully.",
-        "levels": {
-          "poor": "No evidence of shipping products or features.",
-          "borderline": "Participation in launches without clear ownership.",
-          "good": "Delivered multiple features or products with measurable adoption.",
-          "strong": "Led complex product launches with significant business impact."
+      ],
+      "interview": [
+        {
+          "id": "product_sense",
+          "name": "Product Sense & User Empathy",
+          "description": "Ability to think through product problems from a user perspective during the interview.",
+          "levels": {
+            "poor": "Struggles to identify user pain points or logical solutions.",
+            "borderline": "Identifies basic needs but lacks structured thinking.",
+            "good": "Structured approach to user needs and feature prioritization.",
+            "strong": "Exceptional clarity in user discovery and innovative solutioning."
+          }
+        },
+        {
+          "id": "strategic_tradeoffs",
+          "name": "Strategic Trade-off Reasoning",
+          "description": "Ability to justify complex product decisions under constraints.",
+          "levels": {
+            "poor": "Can't explain the 'why' behind decisions.",
+            "borderline": "Mentions constraints but lacks clear prioritization framework.",
+            "good": "Clear reasoning for trade-offs between speed, cost, and quality.",
+            "strong": "Nuanced understanding of long-term vs short-term business impact."
+          }
         }
-      },
-      {
-        "id": "data_driven_decisions",
-        "name": "Data-Driven Product Thinking",
-        "description": "Measures ability to use data and experimentation in product decisions.",
-        "levels": {
-          "poor": "No product metrics or analytics mentioned.",
-          "borderline": "Tracks basic KPIs but limited evidence of data-driven decisions.",
-          "good": "Uses metrics to guide product decisions and feature prioritization.",
-          "strong": "Designs experiments and analytics frameworks improving product metrics."
+      ]
+    },
+    "software_engineer": {
+      "resume": [
+        {
+          "id": "technical_stack_alignment",
+          "name": "Technical Stack Alignment",
+          "description": "Measures alignment between JD technology requirements and candidate experience.",
+          "levels": {
+            "poor": "Required technologies absent from resume.",
+            "borderline": "Limited exposure to required technologies.",
+            "good": "Hands-on experience with most technologies required by the JD.",
+            "strong": "Deep expertise with the tech stack including optimization or architecture work."
+          }
+        },
+        {
+          "id": "system_scale_experience",
+          "name": "System Scale Experience",
+          "description": "Measures experience with large-scale or production systems.",
+          "levels": {
+            "poor": "Only small projects or academic systems mentioned.",
+            "borderline": "Limited production exposure.",
+            "good": "Built or maintained production systems with measurable scale.",
+            "strong": "Designed distributed systems handling high traffic or large datasets."
+          }
         }
-      },
-      {
-        "id": "customer_understanding",
-        "name": "Customer & Market Insight",
-        "description": "Measures understanding of user needs and market opportunities.",
-        "levels": {
-          "poor": "No evidence of customer research or user insight.",
-          "borderline": "Mentions customer feedback but unclear product influence.",
-          "good": "Conducts user research influencing product decisions.",
-          "strong": "Transforms customer insights into product strategy or major features."
+      ],
+      "interview": [
+        {
+          "id": "system_architecture_thinking",
+          "name": "System Architecture Thinking",
+          "description": "Ability to design scalable systems and handle edge cases during technical rounds.",
+          "levels": {
+            "poor": "Struggles with basic component interaction or bottleneck identification.",
+            "borderline": "Basic design works but fails under high scale or specific failures.",
+            "good": "Solid design with clear components, APIs, and scaling strategy.",
+            "strong": "Sophisticated architecture with deep understanding of CAP theorem and tradeoffs."
+          }
+        },
+        {
+          "id": "coding_rubric",
+          "name": "Analytical Logic & Bug Resilience",
+          "description": "Precision in implementation and ability to debug complex logic.",
+          "levels": {
+            "poor": "Slow implementation, basic syntax errors, or logical flaws.",
+            "borderline": "Solved problem but needed significant prompting for edge cases.",
+            "good": "Clean, efficient implementation with good handle on edge cases.",
+            "strong": "Exceptional speed, elegance, and proactive testing of the solution."
+          }
         }
-      }
-    ],
-    "software_engineer": [
-      {
-        "id": "technical_stack_alignment",
-        "name": "Technical Stack Alignment",
-        "description": "Measures alignment between JD technology requirements and candidate experience.",
-        "levels": {
-          "poor": "Required technologies absent from resume.",
-          "borderline": "Limited exposure to required technologies.",
-          "good": "Hands-on experience with most technologies required by the JD.",
-          "strong": "Deep expertise with the tech stack including optimization or architecture work."
+      ]
+    },
+    "technical_program_manager": {
+      "resume": [
+        {
+          "id": "program_execution_rigor",
+          "name": "Program Execution & Scale",
+          "description": "Observable track record of delivering end-to-end complex programs.",
+          "levels": {
+            "poor": "No evidence of owning end-to-end project lifecycles.",
+            "borderline": "Managed small projects but limited evidence of cross-functional scale.",
+            "good": "Delivered multi-month programs across multiple departments.",
+            "strong": "Consistently delivers high-stakes, enterprise-scale programs with clear metrics."
+          }
+        },
+        {
+          "id": "technical_breadth_resume",
+          "name": "Technical Breadth & Domain Fit",
+          "description": "Evidence of working in technical environments similar to the JD.",
+          "levels": {
+            "poor": "Non-technical background or unrelated domain.",
+            "borderline": "Generalist background with limited depth in the required tech domain.",
+            "good": "Solid understanding of the relevant tech stack and engineering processes.",
+            "strong": "Deep domain expertise that allows for meaningful technical pushback."
+          }
         }
-      },
-      {
-        "id": "system_scale_experience",
-        "name": "System Scale Experience",
-        "description": "Measures experience with large-scale or production systems.",
-        "levels": {
-          "poor": "Only small projects or academic systems mentioned.",
-          "borderline": "Limited production exposure.",
-          "good": "Built or maintained production systems with measurable scale.",
-          "strong": "Designed distributed systems handling high traffic or large datasets."
+      ],
+      "interview": [
+        {
+          "id": "risk_sensing_interview",
+          "name": "Proactive Risk Sensing",
+          "description": "Ability to see around corners and preemptively manage bottlenecks during case studies.",
+          "levels": {
+            "poor": "Reacts to issues only after they are mentioned.",
+            "borderline": "Identifies obvious risks but misses subtle sequence bottlenecks.",
+            "good": "Strong proactive planning and fallback strategy development.",
+            "strong": "Exceptional instinct for critical-path risk and mitigation sequencing."
+          }
+        },
+        {
+          "id": "influence_without_authority",
+          "name": "Influence & Stakeholder Negotiation",
+          "description": "Ability to drive consensus among conflicting engineering and product goals.",
+          "levels": {
+            "poor": "Passive or overly aggressive; fails to build consensus.",
+            "borderline": "Can follow up but struggles to persuade senior stakeholders.",
+            "good": "Effective at building alignment and resolving low-stakes conflicts.",
+            "strong": "Masterful negotiator; drives high-stakes alignment while maintaining trust."
+          }
         }
-      },
-      {
-        "id": "engineering_impact",
-        "name": "Engineering Impact",
-        "description": "Measures measurable improvements or technical contributions.",
-        "levels": {
-          "poor": "No measurable improvements mentioned.",
-          "borderline": "Some improvements mentioned without metrics.",
-          "good": "Demonstrates measurable system improvements (performance, reliability).",
-          "strong": "Delivered major technical improvements affecting large user bases."
-        }
-      }
-    ],
-    "data_analyst": [
-      {
-        "id": "analytical_skills",
-        "name": "Analytical Skills",
-        "description": "Measures ability to analyze and interpret data.",
-        "levels": {
-          "poor": "Limited analytical tools or techniques used.",
-          "borderline": "Basic SQL or reporting skills.",
-          "good": "Strong analytics using SQL, dashboards, and structured analysis.",
-          "strong": "Advanced analysis using statistical methods or predictive models."
-        }
-      },
-      {
-        "id": "data_scale_complexity",
-        "name": "Data Scale & Complexity",
-        "description": "Measures the scale and complexity of data handled.",
-        "levels": {
-          "poor": "Small datasets or manual reporting tasks.",
-          "borderline": "Moderate datasets with limited complexity.",
-          "good": "Large dataset analysis and dashboard automation.",
-          "strong": "Handles large-scale analytics pipelines or complex data modeling."
-        }
-      },
-      {
-        "id": "business_impact_analysis",
-        "name": "Business Impact of Analysis",
-        "description": "Measures how analytics influenced business decisions.",
-        "levels": {
-          "poor": "Insights without business application.",
-          "borderline": "Some analysis but unclear decision impact.",
-          "good": "Analysis improved product or operational decisions.",
-          "strong": "Insights directly influenced major strategic decisions."
-        }
-      }
-    ],
-    "ai_product_manager": [
-      {
-        "id": "ai_product_experience",
-        "name": "AI Product Experience",
-        "description": "Measures candidate exposure to AI/ML-driven products.",
-        "levels": {
-          "poor": "No AI or ML product exposure.",
-          "borderline": "Limited AI feature involvement.",
-          "good": "Managed AI-enabled features or ML-powered products.",
-          "strong": "Led AI product initiatives delivering measurable outcomes."
-        }
-      },
-      {
-        "id": "ai_technical_fluency",
-        "name": "AI Technical Fluency",
-        "description": "Measures ability to work with ML teams and understand AI systems.",
-        "levels": {
-          "poor": "Minimal understanding of ML or AI technologies.",
-          "borderline": "Basic ML terminology familiarity.",
-          "good": "Understands ML pipelines, model metrics, and training processes.",
-          "strong": "Deep collaboration with ML teams including model lifecycle decisions."
-        }
-      },
-      {
-        "id": "ai_product_impact",
-        "name": "AI Product Impact",
-        "description": "Measures measurable outcomes delivered by AI products.",
-        "levels": {
-          "poor": "AI initiatives without measurable results.",
-          "borderline": "Limited AI product outcomes.",
-          "good": "AI features improved measurable metrics.",
-          "strong": "AI initiatives significantly improved business or product outcomes."
-        }
-      }
-    ],
-    "technical_program_manager": [
-      {
-        "id": "program_execution_rigor",
-        "name": "Program Execution & Delivery",
-        "description": "Measures the ability to drive complex programs from concept to launch on time and within scope.",
-        "levels": {
-          "poor": "No evidence of owning end-to-end project lifecycles; mostly task-level involvement.",
-          "borderline": "Managed small projects but limited evidence of handling cross-functional complexity.",
-          "good": "Proven track record of delivering multi-month programs with clear milestones and success criteria.",
-          "strong": "Consistently delivers high-stakes, large-scale programs on time with documented business impact."
-        }
-      },
-      {
-        "id": "risk_mitigation_management",
-        "name": "Risk & Issue Management",
-        "description": "Measures the ability to proactively identify, mitigate, and resolve program risks and blockers.",
-        "levels": {
-          "poor": "No mention of risk identification or mitigation strategies.",
-          "borderline": "Identifies issues after they occur but shows limited proactive risk planning.",
-          "good": "Proactively identifies risks and creates 'Path to Green' plans to keep programs on track.",
-          "strong": "Demonstrates 'Sixth Sense' for risk; expertly navigates complex blockers to prevent project delays."
-        }
-      },
-      {
-        "id": "stakeholder_orchestration",
-        "name": "Stakeholder & Dependency Management",
-        "description": "Measures ability to align Engineering, Product, and Ops teams and manage complex inter-dependencies.",
-        "levels": {
-          "poor": "Isolated contributor role with minimal cross-functional interaction.",
-          "borderline": "Basic collaboration with single teams; limited experience managing conflicting priorities.",
-          "good": "Successfully manages dependencies across 3+ distinct departments (e.g., Engineering, Ops, Product).",
-          "strong": "Expertly orchestrates large, multi-departmental groups; drives consensus and accountability in high-stakes environments."
-        }
-      }
-    ]
+      ]
+    }
   },
   "evaluation_weights": {
     "universal_fit_weight": 0.4,

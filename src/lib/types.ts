@@ -36,7 +36,8 @@ export interface Candidate {
   id: string;
   roleId: string;
   name: string;
-  status: CandidateStatus;
+  email: string;
+  stage: CandidateStatus;
   resume_score: number | null;
   interview_score?: number | null;
   interview_summary?: string | null;

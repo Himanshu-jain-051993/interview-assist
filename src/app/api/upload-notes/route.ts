@@ -1,28 +1,8 @@
 import { NextResponse } from "next/server";
 import pg from "pg";
 import mammoth from "mammoth";
-// Fix for DOMMatrix undefined error in pdf-parse on Next.js Serverless
-if (typeof global.DOMMatrix === 'undefined') {
-  (global as any).DOMMatrix = function() {};
-}
-if (typeof global.Path2D === 'undefined') {
-  (global as any).Path2D = function() {};
-}
+import { safePdfParse } from "@/lib/pdf-utils";
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdf = require("pdf-parse");
-
-async function safePdfParse(buffer: Buffer): Promise<{ text: string }> {
-  if (typeof pdf === 'function') return pdf(buffer);
-  if (pdf.PDFParse) {
-    const instance = new pdf.PDFParse({ data: buffer });
-    const data = await instance.getText();
-    await instance.destroy();
-    return data || { text: "" };
-  }
-  if (pdf.default) return pdf.default(buffer);
-  throw new Error("pdf-parse library error: No valid parsing function found.");
-}
 
 const { Pool } = pg;
 const pool = new Pool({

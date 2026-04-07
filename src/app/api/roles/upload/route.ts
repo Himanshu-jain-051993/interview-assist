@@ -4,28 +4,8 @@ import { generateRubricsForCategory } from "@/lib/agents/rubric-generator";
 import mammoth from "mammoth";
 import pg from "pg";
 
-// Fix for DOMMatrix undefined error in pdf-parse on Next.js Serverless
-if (typeof global.DOMMatrix === 'undefined') {
-  (global as any).DOMMatrix = function() {};
-}
-if (typeof global.Path2D === 'undefined') {
-  (global as any).Path2D = function() {};
-}
+import { safePdfParse } from "@/lib/pdf-utils";
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdf = require("pdf-parse");
-
-async function safePdfParse(buffer: Buffer): Promise<{ text: string }> {
-  if (typeof pdf === 'function') return pdf(buffer);
-  if (pdf.PDFParse) {
-    const instance = new pdf.PDFParse({ data: buffer });
-    const data = await instance.getText();
-    await instance.destroy();
-    return data || { text: "" };
-  }
-  if (pdf.default) return pdf.default(buffer);
-  throw new Error("pdf-parse library error: No valid parsing function found.");
-}
 
 const { Pool } = pg;
 const pool = new Pool({
@@ -106,38 +86,65 @@ export async function POST(req: NextRequest) {
 
     // ──────────────────────────────────────────────────────────────────────────
     // 🔍 AUTOMATIC RUBRIC GENERATION
-    // Check if rubrics exist for this category. If not, generate them!
+    // Ensure we have both RESUME and INTERVIEW rubrics for this role.
     // ──────────────────────────────────────────────────────────────────────────
     try {
-      const rubricCheck = await pool.query('SELECT id FROM "Rubric" WHERE category = $1 LIMIT 1', [roleCategory]);
+      // Normalize category for rubric check
+      const baseCategory = (parsedData.category || "General").trim();
       
-      if (rubricCheck.rows.length === 0) {
-        console.log(`[POST /api/roles/upload] NEW CATEGORY DETECTED: "${roleCategory}". Generating specialized rubrics...`);
-        const newRubrics = await generateRubricsForCategory(roleCategory, extractedText);
-        
-        if (newRubrics && newRubrics.length > 0) {
-          console.log(`[POST /api/roles/upload] Bulk inserting ${newRubrics.length} rubrics for ${roleCategory}`);
-          for (const rub of newRubrics) {
-            try {
-              await pool.query(
-                'INSERT INTO "Rubric" (id, category, parameter, poor, borderline, good, strong, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW()) ON CONFLICT DO NOTHING',
-                [
-                  "rub_" + Math.random().toString(36).substring(2, 11),
-                  roleCategory,
-                  rub.parameter,
-                  rub.poor,
-                  rub.borderline || "Meets basic requirements",
-                  rub.good,
-                  rub.strong,
-                ]
-              );
-            } catch (err) {
-               console.error(`[POST /api/roles/upload] Failed to insert rubric: ${rub.parameter}`, err);
-            }
+      // If the category is very broad (Product, Engineering) but title is specific, 
+      // we might want a more specific category for rubrics to avoid overlap.
+      // For now, we'll keep the AI's category but ensure we have enough diversity.
+      const normalizedCategory = baseCategory;
+
+      const resumeCheck = await pool.query('SELECT count(*) FROM "Rubric" WHERE category = $1 AND type = $2', [normalizedCategory, 'RESUME']);
+      const interviewCheck = await pool.query('SELECT count(*) FROM "Rubric" WHERE category = $1 AND type = $2', [normalizedCategory, 'INTERVIEW']);
+      
+      const resCount = parseInt(resumeCheck.rows[0].count);
+      const intCount = parseInt(interviewCheck.rows[0].count);
+      
+      console.log(`[POST /api/roles/upload] Rubric audit for "${normalizedCategory}": Resume=${resCount}, Interview=${intCount}`);
+
+      // Always generate rubrics for this JD - ensures fresh, role-specific standards every time
+      console.log(`[POST /api/roles/upload] Generating rubrics via Gemini 2.5 Pro...`);
+      const { resume_screening_rubrics, interview_evaluation_rubrics } = await generateRubricsForCategory(normalizedCategory, extractedText);
+      
+      const allNewRubrics = [
+        ...resume_screening_rubrics.map(r => ({ ...r, type: 'RESUME' })),
+        ...interview_evaluation_rubrics.map(r => ({ ...r, type: 'INTERVIEW' }))
+      ];
+
+      if (allNewRubrics.length > 0) {
+        console.log(`[POST /api/roles/upload] Upserting ${allNewRubrics.length} rubrics for "${normalizedCategory}"`);
+        for (const rub of allNewRubrics) {
+          try {
+            await pool.query(
+              `INSERT INTO "Rubric" (id, category, type, parameter, poor, borderline, good, strong, created_at)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+               ON CONFLICT (category, type, parameter) 
+               DO UPDATE SET 
+                poor = EXCLUDED.poor,
+                borderline = EXCLUDED.borderline,
+                good = EXCLUDED.good,
+                strong = EXCLUDED.strong`,
+              [
+                "rub_" + Math.random().toString(36).substring(2, 11),
+                normalizedCategory,
+                rub.type,
+                rub.parameter,
+                rub.poor,
+                rub.borderline || "Meets basic requirements",
+                rub.good,
+                rub.strong,
+              ]
+            );
+          } catch (err) {
+             console.error(`[POST /api/roles/upload] Failed to upsert rubric: ${rub.parameter}`, err);
           }
         }
+        console.log(`[POST /api/roles/upload] Rubric generation complete: ${resume_screening_rubrics.length} resume + ${interview_evaluation_rubrics.length} interview rubrics.`);
       } else {
-        console.log(`[POST /api/roles/upload] Category "${roleCategory}" already has rubrics. Skipping generation.`);
+        console.warn(`[POST /api/roles/upload] AI returned 0 rubrics for "${normalizedCategory}". Check Gemini response.`);
       }
     } catch (rubricErr) {
       console.error("[POST /api/roles/upload] Rubric Generation Pipeline Error:", rubricErr);

@@ -45,12 +45,11 @@ const STAGE_OPTIONS: CandidateStatus[] = [
   "Screening",
   "Shortlisted",
   "Interview",
-  "Interview Scheduled",
   "Rejected",
 ];
 
 // Stages at/above Interview — unlock cockpit
-const ADVANCED_STAGES: CandidateStatus[] = ["Interview", "Interview Scheduled"];
+const ADVANCED_STAGES: CandidateStatus[] = ["Interview"];
 
 const getScoreLabel = (score: number) => {
   if (score >= 90) return "Strong";
@@ -73,11 +72,11 @@ export function CandidateTable({ candidates, onDeleted }: CandidateTableProps) {
   const [localStatuses, setLocalStatuses] = useState<Record<string, CandidateStatus>>({});
 
   const getDisplayStatus = (c: Candidate): CandidateStatus =>
-    localStatuses[c.id] ?? (c.status as CandidateStatus);
+    localStatuses[c.id] ?? (c.stage as CandidateStatus);
 
   const handleStatusChange = async (id: string, newStatus: CandidateStatus) => {
     setIsUpdatingStatus(id);
-    const prevStatus = localStatuses[id] || candidates.find(c => c.id === id)?.status;
+    const prevStatus = localStatuses[id] || candidates.find(c => c.id === id)?.stage;
     
     // Optimistic update
     setLocalStatuses((prev) => ({ ...prev, [id]: newStatus }));
@@ -86,14 +85,14 @@ export function CandidateTable({ candidates, onDeleted }: CandidateTableProps) {
       const res = await fetch(`/api/candidates/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ stage: newStatus }),
       });
       if (!res.ok) throw new Error("Update failed");
       toast.success(`Stage updated: ${newStatus}`);
       
       // Sync with review sheet if it's open for this candidate
       if (reviewCandidate?.id === id) {
-        setReviewCandidate(prev => prev ? { ...prev, status: newStatus } : null);
+        setReviewCandidate(prev => prev ? { ...prev, stage: newStatus } : null);
       }
     } catch (err) {
       toast.error("Failed to update stage");
@@ -104,7 +103,8 @@ export function CandidateTable({ candidates, onDeleted }: CandidateTableProps) {
     }
   };
 
-  const getStatusBadgeClass = (status: string) => {
+  const getStatusBadgeClass = (status: string | undefined | null) => {
+    if (!status) return "text-slate-600 border-slate-200 bg-slate-50";
     switch (status.toLowerCase()) {
       case "applied":              return "text-slate-600 border-slate-200 bg-slate-50";
       case "screening":            return "text-blue-600 border-blue-200 bg-blue-50";
@@ -121,10 +121,27 @@ export function CandidateTable({ candidates, onDeleted }: CandidateTableProps) {
     return "text-rose-600";
   };
 
-  const openReviewSheet = (candidate: Candidate, tab: string) => {
+  const openReviewSheet = async (candidate: Candidate, tab: string) => {
     setActiveTab(tab);
     setReviewCandidate(candidate);
-    // Don't call handleGenerateGuide here, let the sheet handle its own initial load if needed
+    
+    // Clear previous guide data when switching candidates
+    setGuideData(null);
+    
+    // Silently check if there's a cached guide available without forcing generation
+    try {
+      const res = await fetch(`/api/generate-guide?candidateId=${candidate.id}&roleId=${candidate.roleId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && (data.guide || Array.isArray(data.guide))) {
+          setGuideData(data);
+        } else if (Array.isArray(data)) {
+          setGuideData({ guide: data });
+        }
+      }
+    } catch (e) {
+      // Ignore initial load errors (it just means it needs generation)
+    }
   };
 
   const handleGenerateGuide = async (candidate: Candidate, force = false) => {
@@ -177,7 +194,6 @@ export function CandidateTable({ candidates, onDeleted }: CandidateTableProps) {
       if (data.candidate) {
         setReviewCandidate(data.candidate);
       } else if (data.reviewData) {
-        // Fallback for different API response structure
         setReviewCandidate(prev => prev ? { 
           ...prev, 
           resume_score: data.score, 
@@ -189,6 +205,21 @@ export function CandidateTable({ candidates, onDeleted }: CandidateTableProps) {
       toast.error("Failed to regenerate analysis");
     } finally {
       setIsRefreshingReview(false);
+    }
+  };
+
+  const handleCandidateUpdate = async (candidateId: string) => {
+    try {
+      const res = await fetch(`/api/candidates/${candidateId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.candidate) {
+          setReviewCandidate(data.candidate);
+          onDeleted?.(true); // triggers list refresh smoothly
+        }
+      }
+    } catch (e) {
+      console.error("Failed silent candidate update", e);
     }
   };
 
@@ -217,36 +248,34 @@ export function CandidateTable({ candidates, onDeleted }: CandidateTableProps) {
             <TableHead className="w-[200px] font-bold text-[11px] uppercase tracking-widest text-slate-500 py-4 pl-6">Candidate Name</TableHead>
             <TableHead className="font-bold text-[11px] uppercase tracking-widest text-slate-500 py-4">Stage</TableHead>
             <TableHead className="font-bold text-[11px] uppercase tracking-widest text-slate-500 py-4 text-center">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger render={<span className="flex items-center justify-center gap-1 cursor-help uppercase" />}>
-                    Resume Fit <Info className="w-3 h-3 text-slate-300 inline ml-1" />
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="w-64 bg-slate-900 border-slate-800 text-white p-3 rounded-xl shadow-2xl">
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-indigo-400 mb-1">Resume Fit Score</p>
-                    <p className="text-[10px] text-slate-200 leading-relaxed">
-                      This score (0–100) represents how well the candidate's skills and experience align with the specific rubrics extracted from the Job Description.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              Resume Fit
             </TableHead>
             <TableHead className="font-bold text-[11px] uppercase tracking-widest text-slate-500 py-4 text-center">
               <TooltipProvider>
                 <Tooltip>
-                  <TooltipTrigger render={<span className="flex items-center justify-center gap-1 cursor-help" />}>
-                    Interview <Info className="w-3 h-3 text-slate-300 inline ml-1" />
+                  <TooltipTrigger>
+                    <span className="flex items-center justify-center gap-1 cursor-help">
+                      Interview <Info className="w-3 h-3 text-slate-300" />
+                    </span>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="w-64 bg-slate-900 border-slate-800 text-white p-3 rounded-xl shadow-2xl">
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-indigo-400 mb-1">Interview Analysis</p>
-                    <p className="text-[10px] text-slate-200 leading-relaxed">
-                      This is the AI interview score (0–100). Upload a transcript in the <strong>Interview Analysis</strong> tab to generate this score.
+                  <TooltipContent side="top" className="w-72 bg-slate-900 border-slate-800 text-white p-4 rounded-xl shadow-2xl">
+                    <p className="text-[11px] font-black uppercase tracking-widest text-indigo-400 mb-2">Interview Breakdown</p>
+                    <p className="text-[10px] text-slate-200 leading-relaxed font-medium">
+                      Combined score from AI interview analysis across all rounds. 
+                      <br /><br />
+                      To generate this score:
+                      <br />
+                      1. Open <strong>Interview Cockpit</strong>
+                      <br />
+                      2. Go to <strong>Interview Analysis</strong> tab
+                      <br />
+                      3. Upload a transcript or feedback
                     </p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </TableHead>
-            <TableHead className="text-right font-bold text-[11px] uppercase tracking-widest text-slate-500 py-4 pr-6"></TableHead>
+            <TableHead className="text-right font-bold text-[11px] uppercase tracking-widest text-slate-500 py-4 pr-6 w-10"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -314,21 +343,9 @@ export function CandidateTable({ candidates, onDeleted }: CandidateTableProps) {
                            />
                         </div>
                      </div>
-                   ) : (
-                     <TooltipProvider>
-                       <Tooltip>
-                         <TooltipTrigger render={<span className="inline-block cursor-help" />}>
-                           <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">—</span>
-                         </TooltipTrigger>
-                         <TooltipContent side="top" className="w-60 bg-slate-900 border-slate-800 text-white p-3 rounded-xl shadow-2xl">
-                           <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 mb-1">Awaiting Analysis</p>
-                           <p className="text-[10px] text-slate-200 leading-relaxed">
-                             No interview analysis yet. Open <strong>Interview Cockpit</strong> → <strong>Interview Analysis</strong> tab → upload a transcript.
-                           </p>
-                         </TooltipContent>
-                       </Tooltip>
-                     </TooltipProvider>
-                   )}
+                    ) : (
+                      <span className="text-[9px] font-bold text-slate-200 uppercase tracking-widest">—</span>
+                    )}
                 </TableCell>
 
                 {/* Actions */}
@@ -363,8 +380,8 @@ export function CandidateTable({ candidates, onDeleted }: CandidateTableProps) {
                           </Button>
                         </TooltipTrigger>
                         {!isAdvanced && (
-                          <TooltipContent side="top" className="bg-slate-900 text-white text-[10px] p-2 rounded-lg font-bold border-slate-800">
-                            Set status to Interview to use Interview Cockpit
+                          <TooltipContent side="top" className="bg-slate-900 text-white text-[10px] p-3 rounded-lg font-bold border-slate-800 shadow-xl">
+                            Set candidate status to <strong>"Interview"</strong> to use Interview Cockpit
                           </TooltipContent>
                         )}
                       </Tooltip>
@@ -379,7 +396,7 @@ export function CandidateTable({ candidates, onDeleted }: CandidateTableProps) {
                       disabled={isDeleting === candidate.id}
                     >
                       {isDeleting === candidate.id ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <Loader2 className="w-3 h-3 animate-spin text-rose-500" />
                       ) : (
                         <Trash2 className="w-4 h-4" />
                       )}
@@ -394,14 +411,15 @@ export function CandidateTable({ candidates, onDeleted }: CandidateTableProps) {
 
       {/* ── Candidate Review Sheet (Integrated Guide, Resume Analysis, etc.) ── */}
       <CandidateReviewSheet
-        candidate={reviewCandidate ? { ...reviewCandidate, status: localStatuses[reviewCandidate.id] || reviewCandidate.status } : null}
+        candidate={reviewCandidate ? { ...reviewCandidate, stage: localStatuses[reviewCandidate.id] || reviewCandidate.stage } : null}
         guideData={guideData}
         isOpen={!!reviewCandidate}
         isRefreshing={isGenerating || isRefreshingReview}
         initialTab={activeTab}
         onRefresh={(force?: boolean) => reviewCandidate && handleGenerateGuide(reviewCandidate, !!force)}
         onRefreshReview={handleRefreshReview}
-        onStatusChange={(newStatus) => reviewCandidate && handleStatusChange(reviewCandidate.id, newStatus as CandidateStatus)}
+        onCandidateUpdate={handleCandidateUpdate}
+        onStageChange={(newStage) => reviewCandidate && handleStatusChange(reviewCandidate.id, newStage as CandidateStatus)}
         onClose={() => {
           if (!isGenerating && !isRefreshingReview) {
             setReviewCandidate(null);

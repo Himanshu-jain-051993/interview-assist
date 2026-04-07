@@ -8,19 +8,19 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const { status } = await request.json();
+    const { stage } = await request.json();
 
     const updated = await prisma.candidate.update({
       where: { id },
       data: { 
-        stage: status,
+        stage: stage,
         status_updated_at: new Date()
       },
     });
 
     return NextResponse.json({
       id: updated.id,
-      status: updated.stage,
+      stage: updated.stage,
     });
   } catch (error: any) {
     console.error("[PATCH /api/candidates/:id] Error:", error);

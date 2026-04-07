@@ -56,12 +56,79 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: "Role not found" }, { status: 404 });
     }
 
-    // Fetch rubrics for this category
-    const rubrics = await (prisma as any).rubric.findMany({
-      where: { category: role.category }
-    });
+    // Use raw SQL with ILIKE for case-insensitive category match
+    // This prevents mismatches between Role.category and Rubric.category casing
+    const { Pool } = require('pg');
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const rubricResult = await pool.query(
+      `SELECT * FROM "Rubric" WHERE category ILIKE $1 ORDER BY type, parameter`,
+      [role.category.trim()]
+    );
+    await pool.end();
+    const dbRubrics = rubricResult.rows;
 
-    return NextResponse.json({ role, rubrics });
+    let resumeRubrics = dbRubrics.filter((r: any) => r.type?.toUpperCase() === 'RESUME').map((r: any) => ({
+      ...r,
+      poor: r.poor_level || r.poor,
+      borderline: r.borderline_level || r.borderline,
+      good: r.good_level || r.good,
+      strong: r.strong_level || r.strong,
+    }));
+    let interviewRubrics = dbRubrics.filter((r: any) => r.type?.toUpperCase() === 'INTERVIEW').map((r: any) => ({
+      ...r,
+      poor: r.poor_level || r.poor,
+      borderline: r.borderline_level || r.borderline,
+      good: r.good_level || r.good,
+      strong: r.strong_level || r.strong,
+    }));
+
+    // Fallback to static JSON if DB rubrics are missing
+    const fs = require('fs');
+    const path = require('path');
+    const rubricsPath = path.join(process.cwd(), 'data', 'resume_rubrics.json');
+    let rubricsData: any = {};
+    try {
+      rubricsData = JSON.parse(fs.readFileSync(rubricsPath, 'utf8'));
+    } catch (err) {
+      console.error("Failed to read rubrics JSON", err);
+    }
+
+    const mapping: Record<string, string> = {
+      "product_management": "product_manager",
+      "software_engineering": "software_engineer",
+      "data_analytics": "data_analyst",
+      "program_management": "technical_program_manager",
+      "ai_product_management": "ai_product_manager",
+    };
+    const rawKey = role.category.toLowerCase().replace(/\s+/g, "_");
+    const roleKey = mapping[rawKey] || rawKey;
+    const staticRubrics = rubricsData.role_specific_rubrics?.[roleKey];
+
+    if (resumeRubrics.length === 0 && staticRubrics?.resume) {
+      resumeRubrics = staticRubrics.resume.map((r: any) => ({ ...r, type: 'RESUME', parameter: r.name || r.parameter, poor: r.levels?.poor, borderline: r.levels?.borderline, good: r.levels?.good, strong: r.levels?.strong }));
+    }
+    if (interviewRubrics.length === 0 && staticRubrics?.interview) {
+      interviewRubrics = staticRubrics.interview.map((r: any) => ({ ...r, type: 'INTERVIEW', parameter: r.name || r.parameter, poor: r.levels?.poor, borderline: r.levels?.borderline, good: r.levels?.good, strong: r.levels?.strong }));
+    }
+
+    // Load universal rubrics from JSON and normalize for display
+    let universalRubrics = [];
+    if (rubricsData.universal_rubrics) {
+      universalRubrics = rubricsData.universal_rubrics.map((r: any) => ({
+        parameter: r.name,
+        poor: r.levels?.poor || "",
+        borderline: r.levels?.borderline || "",
+        good: r.levels?.good || "",
+        strong: r.levels?.strong || ""
+      }));
+    }
+
+    return NextResponse.json({ 
+      role, 
+      resumeRubrics,
+      interviewRubrics,
+      universalRubrics 
+    });
   } catch (error: any) {
     console.error("Error fetching role details:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

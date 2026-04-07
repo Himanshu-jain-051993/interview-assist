@@ -72,44 +72,44 @@ interface AIEvaluationSheetProps {
   candidate: Candidate | null;
   isOpen: boolean;
   onClose: () => void;
-  onStatusChange?: (id: string, newStatus: CandidateStatus) => void;
+  onStageChange?: (id: string, newStage: CandidateStatus) => void;
 }
 
 export function AIEvaluationSheet({
   candidate,
   isOpen,
   onClose,
-  onStatusChange,
+  onStageChange,
 }: AIEvaluationSheetProps) {
-  const [status, setStatus] = useState<CandidateStatus | null>(null);
+  const [stage, setStage] = useState<CandidateStatus | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [isUploading, setIsUploading] = useState(false);
   const [synthesis, setSynthesis] = useState<SynthesisResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Sync status from prop when candidate changes
-  const currentStatus = status ?? (candidate?.status as CandidateStatus);
+  // Sync stage from prop when candidate changes
+  const currentStage = stage ?? (candidate?.stage as CandidateStatus);
 
-  // ── Status update ──────────────────────────────────────────────────────
-  const handleStatusChange = async (newStatus: CandidateStatus) => {
+  // ── Stage update ──────────────────────────────────────────────────────
+  const handleStageChange = async (newStage: CandidateStatus) => {
     if (!candidate) return;
-    const prevStatus = currentStatus;
-    setStatus(newStatus); // optimistic
+    const prevStage = currentStage;
+    setStage(newStage); // optimistic
 
     try {
       const res = await fetch(`/api/candidates/${candidate.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ stage: newStage }),
       });
       if (!res.ok) throw new Error("Update failed");
-      onStatusChange?.(candidate.id, newStatus);
-      toast.success("Status updated", {
-        description: `${candidate.name} → ${newStatus}`,
+      onStageChange?.(candidate.id, newStage);
+      toast.success("Stage updated", {
+        description: `${candidate.name} → ${newStage}`,
       });
     } catch {
-      setStatus(prevStatus); // rollback
-      toast.error("Could not update status. Please try again.");
+      setStage(prevStage); // rollback
+      toast.error("Could not update stage. Please try again.");
     }
   };
 
@@ -184,7 +184,7 @@ export function AIEvaluationSheet({
       open={isOpen}
       onOpenChange={(open) => {
         if (!open) {
-          setStatus(null);
+          setStage(null);
           setSynthesis(null);
           setUploadProgress(0);
           onClose();
@@ -219,7 +219,7 @@ export function AIEvaluationSheet({
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Stage
             </span>
-            <Select value={currentStatus} onValueChange={(v) => handleStatusChange(v as CandidateStatus)}>
+            <Select value={currentStage} onValueChange={(v) => handleStageChange(v as CandidateStatus)}>
               <SelectTrigger className="w-52 h-8 text-sm font-medium border-slate-200">
                 <SelectValue />
               </SelectTrigger>

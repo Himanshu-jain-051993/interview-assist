@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || "");
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
 export interface ScoringResult {
   resume_summary: string;
@@ -182,12 +182,11 @@ IMPORTANT RULES
   const response = await result.response;
   const text = response.text();
   
-  // Clean dynamic JSON output
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
     throw new Error("Failed to parse JSON from Gemini response");
   }
-  
   return JSON.parse(jsonMatch[0]);
 }
+
 
