@@ -56,7 +56,7 @@ export async function performMasterAudit(
       [roleCategory.trim()]
     );
     // Map DB rows to match the expected JSON structure (name instead of parameter)
-    dbRubrics = result.rows.map(row => ({
+    dbRubrics = result.rows.map((row: any) => ({
       id: row.id,
       name: row.parameter,
       description: row.description || "",

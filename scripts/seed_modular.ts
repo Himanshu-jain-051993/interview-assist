@@ -78,19 +78,21 @@ async function seedRoles() {
 }
 
 async function seedRubrics() {
-  const rubricsPath = path.join(process.cwd(), "data", "rubrics.json");
-  const rubricsData = JSON.parse(fs.readFileSync(rubricsPath, "utf-8"));
+  // 1. Seed Interview Rubrics from rubrics.json
+  const interviewRubricsPath = path.join(process.cwd(), "data", "rubrics.json");
+  const interviewRubricsData = JSON.parse(fs.readFileSync(interviewRubricsPath, "utf-8"));
 
-  const categories = Object.keys(rubricsData);
-  console.log(`Seeding rubrics for ${categories.length} categories...`);
+  const interviewCategories = Object.keys(interviewRubricsData);
+  console.log(`Seeding INTERVIEW rubrics for ${interviewCategories.length} categories...`);
 
-  for (const category of categories) {
-    const parameters = rubricsData[category];
+  for (const category of interviewCategories) {
+    const parameters = interviewRubricsData[category];
     for (const p of parameters) {
-      await prisma.rubric.upsert({
+      await (prisma as any).rubric.upsert({
         where: {
-          category_parameter: {
+          category_type_parameter: {
             category: category,
+            type: 'INTERVIEW',
             parameter: p.parameter,
           },
         },
@@ -102,6 +104,53 @@ async function seedRubrics() {
         },
         create: {
           category: category,
+          type: 'INTERVIEW',
+          parameter: p.parameter,
+          poor: p.poor,
+          borderline: p.borderline,
+          good: p.good,
+          strong: p.strong,
+        },
+      });
+    }
+  }
+
+  // 2. Seed Resume Rubrics from resume_rubrics.json
+  const resumeRubricsPath = path.join(process.cwd(), "data", "resume_rubrics.json");
+  const resumeRubricsData = JSON.parse(fs.readFileSync(resumeRubricsPath, "utf-8"));
+
+  const mapping: Record<string, string> = {
+    "product_manager": "Product Management",
+    "software_engineer": "Software Engineering",
+    "data_analyst": "Data Analytics",
+    "technical_program_manager": "Program Management",
+    "ai_product_manager": "AI Product Management",
+  };
+
+  const resumeCategories = Object.keys(resumeRubricsData.role_specific_rubrics);
+  console.log(`Seeding RESUME rubrics for ${resumeCategories.length} categories...`);
+
+  for (const rawKey of resumeCategories) {
+    const category = mapping[rawKey] || rawKey;
+    const parameters = resumeRubricsData.role_specific_rubrics[rawKey];
+    for (const p of parameters) {
+      await (prisma as any).rubric.upsert({
+        where: {
+          category_type_parameter: {
+            category: category,
+            type: 'RESUME',
+            parameter: p.parameter,
+          },
+        },
+        update: {
+          poor: p.poor,
+          borderline: p.borderline,
+          good: p.good,
+          strong: p.strong,
+        },
+        create: {
+          category: category,
+          type: 'RESUME',
           parameter: p.parameter,
           poor: p.poor,
           borderline: p.borderline,
