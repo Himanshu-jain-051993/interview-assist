@@ -16,12 +16,6 @@ export async function generateRubricsForCategory(category: string, jdText: strin
   resume_screening_rubrics: GeneratedRubric[];
   interview_evaluation_rubrics: GeneratedRubric[];
 }> {
-  // Use gemini-2.5-pro for top-quality interview evaluation
-  const model = getGeminiModel("gemini-2.5-pro");
-  // Apply specific config to the model instance if needed, 
-  // or pass it through getGeminiModel. For now, we use standard.
-  (model as any).generationConfig = { responseMimeType: "application/json", temperature: 0 };
-
   const prompt = `
     You are a Strategic Hiring Lead at a top-tier company (e.g., Google, Meta, McKinsey Digital).
     We are hiring for a role in the category: "${category}".
@@ -89,28 +83,33 @@ export async function generateRubricsForCategory(category: string, jdText: strin
     ${jdText.substring(0, 3000)}
   `;
 
-  try {
-    const model = getGeminiModel(modelName);
-    console.log(`[rubric-generator] Using ${modelName}...`);
-    const result = await model.generateContent(prompt);
-    let text = result.response.text().trim();
-    
-    // Clean JSON
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    const cleanJson = jsonMatch ? jsonMatch[0] : text.replace(/```json\n?|```/g, "").trim();
-    
-    const parsed = JSON.parse(cleanJson);
-    return {
-      resume_screening_rubrics: parsed.resume_screening_rubrics || [],
-      interview_evaluation_rubrics: parsed.interview_evaluation_rubrics || []
-    };
-  } catch (error: any) {
-    const is503 = error?.status === 503 || error?.message?.includes('503') || error?.message?.includes('Service Unavailable');
-    console.error(`[rubric-generator] Failed with ${modelName}:`, error?.message);
-    lastError = error;
-    if (!is503) break; // Only retry on 503, not other errors
+  // Try gemini-2.5-flash first; fall back to gemini-2.0-flash on 503
+  const modelNames = ["gemini-2.5-flash", "gemini-2.0-flash"];
+  let lastError: any = null;
+
+  for (const modelName of modelNames) {
+    try {
+      const model = getGeminiModel(modelName);
+      console.log(`[rubric-generator] Using ${modelName}...`);
+      const result = await model.generateContent(prompt);
+      let text = result.response.text().trim();
+      
+      // Clean JSON
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      const cleanJson = jsonMatch ? jsonMatch[0] : text.replace(/```json\n?|```/g, "").trim();
+      
+      const parsed = JSON.parse(cleanJson);
+      return {
+        resume_screening_rubrics: parsed.resume_screening_rubrics || [],
+        interview_evaluation_rubrics: parsed.interview_evaluation_rubrics || []
+      };
+    } catch (error: any) {
+      const is503 = error?.status === 503 || error?.message?.includes('503') || error?.message?.includes('Service Unavailable');
+      console.error(`[rubric-generator] Failed with ${modelName}:`, error?.message);
+      lastError = error;
+      if (!is503) break; // Only retry on 503, not other errors
+    }
   }
-}
 
   // All models failed
   console.error(`[rubric-generator] All models failed for ${category}.`);
