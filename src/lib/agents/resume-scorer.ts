@@ -1,9 +1,6 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getGeminiModel } from "@/lib/gemini-utils";
 import fs from "fs";
 import path from "path";
-
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || "");
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
 export interface ScoringResult {
   resume_summary: string;
@@ -29,6 +26,7 @@ export async function scoreResume(
   resumeText: string,
   roleCategory: string
 ): Promise<ScoringResult> {
+  const model = getGeminiModel("gemini-2.5-pro");
   // Load rubrics from data file
   const rubricsPath = path.join(process.cwd(), "data", "resume_rubrics.json");
   const rubricsData = JSON.parse(fs.readFileSync(rubricsPath, "utf-8"));

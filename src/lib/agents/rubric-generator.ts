@@ -1,6 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
+import { getGeminiModel } from "@/lib/gemini-utils";
 
 export interface GeneratedRubric {
   parameter: string;
@@ -18,11 +16,11 @@ export async function generateRubricsForCategory(category: string, jdText: strin
   resume_screening_rubrics: GeneratedRubric[];
   interview_evaluation_rubrics: GeneratedRubric[];
 }> {
-  // Try gemini-2.5-flash first; fall back to gemini-2.0-flash on 503
-  const modelNames = ["gemini-2.5-flash", "gemini-2.0-flash"];
-  let lastError: any = null;
-
-  for (const modelName of modelNames) {
+  // Use gemini-2.5-pro for top-quality interview evaluation
+  const model = getGeminiModel("gemini-2.5-pro");
+  // Apply specific config to the model instance if needed, 
+  // or pass it through getGeminiModel. For now, we use standard.
+  (model as any).generationConfig = { responseMimeType: "application/json", temperature: 0 };
 
   const prompt = `
     You are a Strategic Hiring Lead at a top-tier company (e.g., Google, Meta, McKinsey Digital).
@@ -92,7 +90,7 @@ export async function generateRubricsForCategory(category: string, jdText: strin
   `;
 
   try {
-    const model = genAI.getGenerativeModel({ model: modelName });
+    const model = getGeminiModel(modelName);
     console.log(`[rubric-generator] Using ${modelName}...`);
     const result = await model.generateContent(prompt);
     let text = result.response.text().trim();

@@ -1,6 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
+import { getGeminiModel } from "@/lib/gemini-utils";
 
 export interface RoundInput {
   roundType: string;
@@ -23,10 +21,9 @@ export async function evaluateInterviewRound(
   previousRounds: PreviousRoundFeedback[]
 ): Promise<any> {
   // Use gemini-2.5-pro for top-quality interview evaluation
-  const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-pro",
-    generationConfig: { responseMimeType: "application/json", temperature: 0 },
-  });
+  const model = getGeminiModel("gemini-2.5-pro");
+  // Apply specific config to the model instance if needed
+  (model as any).generationConfig = { responseMimeType: "application/json", temperature: 0 };
 
   const previousFeedbackText =
     previousRounds.length === 0

@@ -1,10 +1,8 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
+import { getGeminiModel } from "@/lib/gemini-utils";
 
 export async function parseResume(text: string) {
   // gemini-2.5-flash is ideal for fast structured extraction
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const model = getGeminiModel("gemini-2.5-flash");
 
   const prompt = `
     You are an expert ATS (Applicant Tracking System) parser. Extract the following information from the candidate's resume and return it as a structured JSON object.

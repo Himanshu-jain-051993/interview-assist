@@ -1,9 +1,7 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
+import { getGeminiModel } from "@/lib/gemini-utils";
 
 export async function parseJobDescription(text: string) {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const model = getGeminiModel("gemini-2.5-flash");
 
   const prompt = `
     You are an expert HR parser. Extract the following information from the provided job description and return it as a structured JSON object.
